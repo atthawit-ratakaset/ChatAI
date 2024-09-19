@@ -4,11 +4,7 @@ import os
 import json
 import time
 from datetime import datetime, timedelta
-import speech_recognition as sr
-import numpy as np
-import pyaudio
 import base64
-from io import BytesIO
 from mutagen.mp3 import MP3
 import tempfile
 import pandas as pd
