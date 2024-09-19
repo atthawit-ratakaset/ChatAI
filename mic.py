@@ -181,6 +181,7 @@ class Chatbot:
             "ฉันชื่ออะไร": ["ผมชื่ออะไร", "ฉันชื่ออะไร", "บอกชื่อผม", "บอกชื่อฉัน", "ชื่ออะไรนะ"],
             "ฉันชื่อเล่นอะไร" : ["ผมชื่อเล่นอะไร", "ฉันชื่อเล่นอะไร", "บอกชื่อเล่นผม", "บอกชื่อเล่นฉัน", "ผมชื่อเล่นว่า", "ฉันชื่อเล่นว่า"],
             "ฉันเกิดวันไหน" : ["ผมเกิดวันไหน", "ฉันเกิดวันไหน", "บอกวันเกิดผม", "บอกวันเกิดฉัน", "ผมเกิดวันที่", "ฉันเกิดวันที่", "วันไหนฉันเกิด", "วันไหนผมเกิด", "ฉันเกิดตอนไหน", "ผมเกิดตอนไหน"],
+            "วันนี้วันอะไร" : ["วันนี้วันที่"]
         }
 
         additional_responses = {
@@ -232,7 +233,7 @@ class Chatbot:
             chat_html = "<br>".join(st.session_state['messages'])
             st.markdown(
                 f"""
-                <div id="chat-container" style="height: 500px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
+                <div id="chat-container" style="height: 350px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
                     {chat_html}
                 </div>
                 """,
@@ -288,7 +289,7 @@ def update_status_display():
 
     status_placeholder.markdown(
         f"""
-        <div style="text-align: center; padding: 10px; border-radius: 10px; background-color: {status_colors[status_text]}; color: white; font-size: 24px; font-weight: bold;">
+        <div style="text-align: center; padding: 5px; border-radius: 5px; background-color: {status_colors[status_text]}; color: white; font-size: 24px; font-weight: bold;">
             {status_messages[status_text]}
         </div>
         """,
@@ -473,4 +474,3 @@ with tab4:
         chatbot.save_person_data()    
         st.toast("Success!")
     chatbot.person_data = chatbot.load_person_data()
-
