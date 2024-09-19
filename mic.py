@@ -15,7 +15,6 @@ class Chatbot:
         self.responses = self.load_responses()
         self.person_data = self.load_person_data()
         self.history = self.load_history()
-        self.chat = 0
 
     def load_responses(self):
         try:
@@ -230,7 +229,7 @@ class Chatbot:
             chat_html = "<br>".join(st.session_state['messages'])
             st.markdown(
                 f"""
-                <div id="chat-container" style="height: 550px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
+                <div id="chat-container" style="height: 500px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
                     {chat_html}
                 </div>
                 """,
@@ -238,13 +237,21 @@ class Chatbot:
             )
   
     def run_chatbot(self):
-        st.session_state['bot_state'] = "off"
+        st.session_state['bot_state'] = "greeting"
+        update_status_display()
         st.session_state['messages'] = []
         st.session_state.text_received = []
+        self.greet()
+    
+    def greet(self):
+        if self.person_data.get("name"):
+            response = f"สวัสดีค่ะ ใช่ คุณ{self.person_data['name']} ไหมคะ"
+            bot = self.update_chat_history("", response)
+            self.display_chat()
+            time.sleep(bot)
         
-
 if 'bot_state' not in st.session_state:
-    st.session_state['bot_state'] = "off"
+    st.session_state['bot_state'] = ""
 
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
@@ -252,6 +259,36 @@ if 'messages' not in st.session_state:
 if 'text_received' not in st.session_state:
     st.session_state.text_received = []
 
+def update_status_display():
+    status_text = st.session_state['bot_state']
+    status_colors = {
+        "": "#808080",        
+        "greeting": "#4CAF50",
+        "active": "#4CAF50",  
+        "new_name": "#FF0000",
+        "new_nickname": "#FF0000",
+        "new_birthday": "#FF0000",
+        "prepare": "#00BFFF"  
+    }
+
+    status_messages = {
+        "": "ไม่ได้ทำงาน",
+        "greeting": "โหมดทักทาย",
+        "active": "โหมดปกติ",
+        "new_name": "โหมดเก็บข้อมูล",
+        "new_nickname": "โหมดเก็บข้อมูล",
+        "new_birthday": "โหมดเก็บข้อมูล",
+        "prepare": "กำลังประมวลผล..."
+    }
+
+    status_placeholder.markdown(
+        f"""
+        <div style="text-align: center; padding: 10px; border-radius: 10px; background-color: {status_colors[status_text]}; color: white; font-size: 24px; font-weight: bold;">
+            {status_messages[status_text]}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 chatbot = Chatbot()
 tab1, tab2, tab3, tab4 = st.tabs(["Home", "Show history", "Show responses", "Show personal data"])
@@ -267,28 +304,138 @@ with tab1:
 
     st.write("")
 
-    st.button("🎤 Reset", on_click = chatbot.run_chatbot)
+    st.button("🎤Start & Reset", on_click = chatbot.run_chatbot)
 
     microphone_st = speech_to_text(start_prompt="🎤 Talking", stop_prompt="Stop Talking", language='th', use_container_width=True, just_once=True, key='STT')
 
     chat_placeholder = st.empty()
     chatbot.display_chat()
 
+    update_status_display()
+
     if microphone_st:
-        if st.session_state["bot_state"] == "off":
+        if st.session_state["bot_state"] == "prepare":
+            pass
+
+        elif st.session_state["bot_state"] == "active":
             st.session_state.text_received.append(microphone_st)
-            chatbot_response = chatbot.chatbot_response(st.session_state.text_received[-1])
-            chatbot.update_chat_history(st.session_state.text_received[-1], "")
-            chatbot.display_chat()
-            if "ขอบคุณ" in st.session_state.text_received[-1]:
-                bot = chatbot.update_chat_history("",chatbot_response)
+            text = st.session_state.text_received[-1]
+            if text:
+                st.session_state["bot_state"] = "prepare"
+                update_status_display()
+                chatbot_response = chatbot.chatbot_response(text)
+                chatbot.update_chat_history(text, "")
+                chatbot.display_chat()
+                if "ขอบคุณ" in text:
+                    bot = chatbot.update_chat_history("",chatbot_response)
+                    chatbot.display_chat()
+                    time.sleep(bot)
+                else:
+                    bot = chatbot.update_chat_history("",chatbot_response)
+                    chatbot.display_chat()
+                    time.sleep(bot)
+                st.session_state["bot_state"] = "active"
+                update_status_display()
+        
+        elif st.session_state["bot_state"] == "greeting":
+            st.session_state.text_received.append(microphone_st)
+            text = st.session_state.text_received[-1]
+            if text:
+                if "ไม่ใช่" in text or "ผิด" in text:
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    chatbot.update_chat_history(text, "")
+                    chatbot.display_chat()
+                    chatbot.add_to_history_bot_fisrt(f"สวัสดีค่ะ ใช่ คุณ{chatbot.person_data['name']} ไหมคะ", text)
+                    bot = chatbot.update_chat_history("", "ขอโทษค่ะ ไม่ทราบว่าชื่ออะไรหรอคะ?")
+                    chatbot.display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "new_name"
+                    update_status_display()
+
+                elif "ใช่" in text or "ครับ" in text or "คะ" in text or "ค่ะ" in text:
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    chatbot.update_chat_history(text, "")
+                    chatbot.display_chat()
+                    chatbot.add_to_history_bot_fisrt(f"สวัสดีค่ะ ใช่ คุณ{chatbot.person_data['name']} ไหมคะ", text)
+
+                    if not chatbot.check_birthday():
+                        pass
+
+                    chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
+                    bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
+                    chatbot.display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "active"
+                    update_status_display()
+
+        elif st.session_state["bot_state"] == "new_name":
+            chatbot.person_data = {}
+            st.session_state.text_received.append(microphone_st)
+            text = st.session_state.text_received[-1]
+            if text:
+                st.session_state["bot_state"] = "prepare"
+                update_status_display()
+                chatbot.update_chat_history(text, "")
+                chatbot.display_chat()
+                chatbot.add_to_history_bot_fisrt("ขอโทษค่ะ ไม่ทราบว่าชื่ออะไรหรอคะ?", text)
+                chatbot.person_data['name'] = chatbot.process_input(text)
+                chatbot.save_person_data()
+                bot = chatbot.update_chat_history("", "ชื่อเล่นของคุณคืออะไรคะ?")
+                chatbot.display_chat()
+                time.sleep(bot)
+                st.session_state["bot_state"] = "new_nickname"
+                update_status_display()
+
+        elif st.session_state["bot_state"] == "new_nickname":
+            st.session_state.text_received.append(microphone_st)
+            text = st.session_state.text_received[-1]
+            if text:
+                st.session_state["bot_state"] = "prepare"
+                update_status_display()
+                chatbot.update_chat_history(text, "")
+                chatbot.display_chat()
+                chatbot.add_to_history_bot_fisrt("ชื่อเล่นของคุณคืออะไรคะ?", text)
+                chatbot.person_data['nickname'] = chatbot.process_input(text)
+                chatbot.save_person_data()
+                bot = chatbot.update_chat_history("", "วันเกิดของคุณคืออะไรคะ?")
+                chatbot.display_chat()
+                time.sleep(bot)
+                st.session_state["bot_state"] = "new_birthday"
+                update_status_display()
+
+        elif st.session_state["bot_state"] == "new_birthday":
+            st.session_state.text_received.append(microphone_st)
+            text = st.session_state.text_received[-1]
+            if text:
+                st.session_state["bot_state"] = "prepare"
+                update_status_display()
+                chatbot.update_chat_history(text, "")
+                chatbot.display_chat()
+                chatbot.add_to_history_bot_fisrt("วันเกิดของคุณคืออะไรคะ?", text)
+                chatbot.person_data['birthday'] = chatbot.process_input(text)
+                chatbot.save_person_data()
+                bot = chatbot.update_chat_history("", "ขอบคุณสำหรับข้อมูลค่ะ")
+                chatbot.display_chat()
+                time.sleep(bot)
+    
+                if not chatbot.check_birthday():
+                    pass
+                
+                chatbot.person_data = chatbot.load_person_data()
+
+                response = f"สวัสดีค่ะ {chatbot.person_data['nickname']} ยินดีที่ได้รู้จักค่ะ!"
+                bot = chatbot.update_chat_history("", response)
                 chatbot.display_chat()
                 time.sleep(bot)
 
-            bot = chatbot.update_chat_history("",chatbot_response)
-            chatbot.display_chat()
-            time.sleep(bot)
-
+                chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
+                bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
+                chatbot.display_chat()
+                time.sleep(bot)
+                st.session_state["bot_state"] = "active"
+                update_status_display()
 
 with tab2:
     chatbot.show_history_json_as_table(chatbot.history, "Chat History")
@@ -312,4 +459,3 @@ with tab4:
         chatbot.save_person_data()    
         st.toast("Success!")
     chatbot.person_data = chatbot.load_person_data()
-
