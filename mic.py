@@ -161,11 +161,14 @@ class Chatbot:
             return f"ตอนนี้เวลา {hours} {minutes} นาที ค่ะ"
 
     def process_input(self, user_input):
+        user_input = user_input.strip()
         if user_input.endswith("ครับ"):
             return user_input[:-4].strip()
         elif user_input.endswith("คะ"):
             return user_input[:-2].strip()
-        return user_input.strip()
+        elif user_input.endswith("ค่ะ"):
+            return user_input[:-3].strip()
+        return user_input
 
     def chatbot_response(self, user_input):
         grouped_responses = {
@@ -177,7 +180,7 @@ class Chatbot:
             "ตอนนี้เวลา": ["ตอนนี้เวลา", "บอกเวลา", "เวลาเท่าไหร่", "ตอนนี้เวลากี่โมง", "เวลาเท่าไร", "เวลา", "ตอนนี้กี่โมง", "วันนี้กี่โมง"],
             "ฉันชื่ออะไร": ["ผมชื่ออะไร", "ฉันชื่ออะไร", "บอกชื่อผม", "บอกชื่อฉัน", "ชื่ออะไรนะ"],
             "ฉันชื่อเล่นอะไร" : ["ผมชื่อเล่นอะไร", "ฉันชื่อเล่นอะไร", "บอกชื่อเล่นผม", "บอกชื่อเล่นฉัน", "ผมชื่อเล่นว่า", "ฉันชื่อเล่นว่า"],
-            "ฉันเกิดวันไหน" : ["ผมเกิดวันไหน", "ฉันเกิดวันไหน", "บอกวันเกิดผม", "บอกวันเกิดฉัน", "ผมเกิดวันที่", "ฉันเกิดวันที่"],
+            "ฉันเกิดวันไหน" : ["ผมเกิดวันไหน", "ฉันเกิดวันไหน", "บอกวันเกิดผม", "บอกวันเกิดฉัน", "ผมเกิดวันที่", "ฉันเกิดวันที่", "วันไหนฉันเกิด", "วันไหนผมเกิด", "ฉันเกิดตอนไหน", "ผมเกิดตอนไหน"],
         }
 
         additional_responses = {
@@ -237,10 +240,12 @@ class Chatbot:
             )
   
     def run_chatbot(self):
+
         st.session_state['bot_state'] = "greeting"
         update_status_display()
         st.session_state['messages'] = []
         st.session_state.text_received = []
+        self.display_chat()
         self.greet()
     
     def greet(self):
@@ -381,6 +386,9 @@ with tab1:
                 chatbot.display_chat()
                 chatbot.add_to_history_bot_fisrt("ขอโทษค่ะ ไม่ทราบว่าชื่ออะไรหรอคะ?", text)
                 chatbot.person_data['name'] = chatbot.process_input(text)
+                if "ชื่อ" in chatbot.process_input(text):
+                    name = chatbot.process_input(text).replace("ชื่อ", "")
+                    chatbot.person_data['name'] = name
                 chatbot.save_person_data()
                 bot = chatbot.update_chat_history("", "ชื่อเล่นของคุณคืออะไรคะ?")
                 chatbot.display_chat()
@@ -398,6 +406,9 @@ with tab1:
                 chatbot.display_chat()
                 chatbot.add_to_history_bot_fisrt("ชื่อเล่นของคุณคืออะไรคะ?", text)
                 chatbot.person_data['nickname'] = chatbot.process_input(text)
+                if "ชื่อ" in chatbot.process_input(text):
+                    nickname = chatbot.process_input(text).replace("ชื่อ", "")
+                    chatbot.person_data['nickname'] = nickname
                 chatbot.save_person_data()
                 bot = chatbot.update_chat_history("", "วันเกิดของคุณคืออะไรคะ?")
                 chatbot.display_chat()
@@ -415,14 +426,14 @@ with tab1:
                 chatbot.display_chat()
                 chatbot.add_to_history_bot_fisrt("วันเกิดของคุณคืออะไรคะ?", text)
                 chatbot.person_data['birthday'] = chatbot.process_input(text)
+                if "วันที่" in chatbot.process_input(text):
+                    date = chatbot.process_input(text).replace("วันที่", "")
+                    chatbot.person_data['birthday'] = date
                 chatbot.save_person_data()
                 bot = chatbot.update_chat_history("", "ขอบคุณสำหรับข้อมูลค่ะ")
                 chatbot.display_chat()
                 time.sleep(bot)
-    
-                if not chatbot.check_birthday():
-                    pass
-                
+
                 chatbot.person_data = chatbot.load_person_data()
 
                 response = f"สวัสดีค่ะ {chatbot.person_data['nickname']} ยินดีที่ได้รู้จักค่ะ!"
@@ -430,6 +441,9 @@ with tab1:
                 chatbot.display_chat()
                 time.sleep(bot)
 
+                if not chatbot.check_birthday():
+                    pass
+                
                 chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
                 bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
                 chatbot.display_chat()
@@ -459,3 +473,4 @@ with tab4:
         chatbot.save_person_data()    
         st.toast("Success!")
     chatbot.person_data = chatbot.load_person_data()
+
