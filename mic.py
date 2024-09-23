@@ -9,6 +9,7 @@ from mutagen.mp3 import MP3
 import tempfile
 import pandas as pd
 from streamlit_mic_recorder import speech_to_text
+from streamlit_option_menu import option_menu
 
 class Chatbot:
     def __init__(self):
@@ -77,11 +78,17 @@ class Chatbot:
         st.write(f"### {title}")
         st.json(json_data)
 
+    def convert_list_to_string(self, value):
+        if isinstance(value, list):
+            return ', '.join(map(str, value)) 
+        return value
+
     def show_history_json_as_table(self, json_data, title):
         st.write(f"### {title}")
         df = pd.DataFrame(json_data)
         df.index += 1
         df = df.rename(columns={'timestamp': 'Timestamp', 'bot_input': 'Bot Input', 'user_input': 'User Input'})
+        df['Bot Input'] = df['Bot Input'].apply(self.convert_list_to_string)
         st.dataframe(df)
 
     def add_to_history(self, user_input, bot_input):
@@ -141,6 +148,13 @@ class Chatbot:
                 </audio>
                 """
 
+            elif self.stage == 5:
+                audio_html = f"""
+                <audio id="chatbot-audio4" autoplay="true" style="display:none;">
+                    <source src="data:audio/mp3;base64,{b64_encoded_audio}" type="audio/mp3">
+                </audio>
+                """
+
             return audio_html, audio_length
         
         except Exception as e:
@@ -172,7 +186,8 @@ class Chatbot:
         return False
 
     def get_time(self):
-        now = datetime.now() + timedelta(hours=7)
+        #now = datetime.now() + timedelta(hours=7) # for build
+        now = datetime.now()
         hours = now.strftime('%H นาฬิกา')
         minutes = now.strftime('%M')
         
@@ -256,6 +271,8 @@ class Chatbot:
                 sound3(audio_button)
             elif self.stage == 4:
                 sound4(audio_button)
+            elif self.stage == 5:
+                sound5(audio_button)
 
             st.session_state['messages'].append(f'<div style="text-align: left;">🤖: {bot_message}</div>')
             return audio_lenght
@@ -265,7 +282,7 @@ class Chatbot:
             chat_html = "<br>".join(st.session_state['messages'])
             st.markdown(
                 f"""
-                <div id="chat-container" style="height: 400px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
+                <div id="chat-container" style="height: 40vh; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
                     {chat_html}
                 </div>
                 """,
@@ -278,7 +295,6 @@ class Chatbot:
         self.display_chat()
         self.greet()
 
-    
     def greet(self):
         if self.person_data.get("name"):
             st.session_state['bot_state'] = "prepare"
@@ -289,6 +305,36 @@ class Chatbot:
             time.sleep(bot)
             st.session_state['bot_state'] = "greeting"
             update_status_display()
+
+    def review_person_data(self):
+        st.session_state['bot_state'] = "prepare"
+        update_status_display()
+        bot = self.update_chat_history("", "ขอบคุณสำหรับข้อมูลค่ะ ข้อมูลที่คุณให้มามีดังนี้")
+        self.display_chat()
+        time.sleep(bot)
+        list_data = []
+        
+        for field in ['name', 'nickname', 'birthday']:
+            text = ''
+            if field == 'name':
+                text = 'ชื่อ'
+            elif field == 'nickname':
+                text = 'ชื่อเล่น'
+            elif field == 'birthday':
+                text = 'วันเกิด'
+            list_data.append(f"{text}: {self.person_data.get(field, 'ไม่ทราบ')}")
+            response = f"{text}: {self.person_data.get(field, 'ไม่ทราบ')}"
+            bot = self.update_chat_history("", response)
+            self.display_chat()
+            time.sleep(bot)
+
+        self.add_to_history_bot_fisrt(list_data, '-')
+        
+        bot = self.update_chat_history("", "ข้อมูลถูกต้องหรือไม่คะ?")
+        self.display_chat()
+        time.sleep(bot)
+        st.session_state['bot_state'] = "comfirmInfo"
+        update_status_display()
         
 if 'bot_state' not in st.session_state:
     st.session_state['bot_state'] = ""
@@ -308,7 +354,8 @@ def update_status_display():
         "new_name": "#FF0000",
         "new_nickname": "#FF0000",
         "new_birthday": "#FF0000",
-        "prepare": "#00BFFF"  
+        "prepare": "#00BFFF",
+        "comfirmInfo": "#4CAF50"
     }
 
     status_messages = {
@@ -318,7 +365,8 @@ def update_status_display():
         "new_name": "โหมดเก็บข้อมูล(พูดได้เลย)",
         "new_nickname": "โหมดเก็บข้อมูล(พูดได้เลย)",
         "new_birthday": "โหมดเก็บข้อมูล(พูดได้เลย)",
-        "prepare": "กำลังประมวลผล...(ห้ามพูด)"
+        "prepare": "กำลังประมวลผล...(ห้ามพูด)",
+        "comfirmInfo": "โหมดยืนยัน(พูดได้เลย)"
     }
 
     status_placeholder.markdown(
@@ -344,12 +392,29 @@ def sound3(html):
 
 def sound4(html):
     sound_placeholder4.markdown(html, unsafe_allow_html=True)
+    chatbot.stage = 5
+
+def sound5(html):
+    sound_placeholder5.markdown(html, unsafe_allow_html=True)
     chatbot.stage = 1
 
-chatbot = Chatbot()
-tab1, tab2, tab3, tab4 = st.tabs(["Home", "Show history", "Show responses", "Show personal data"])
 
-with tab1:
+chatbot = Chatbot()
+
+with st.sidebar:
+    selected = option_menu(
+        menu_title= "Menu",
+        options=["Home", 
+                "Show history", 
+                "Show responses", 
+                "Show personal data"],
+        icons=["wechat", "clock-history", "database", "file-person"],
+        menu_icon=["house-door-fill"],
+        default_index=0,
+
+    )
+
+if selected == "Home":
     st.markdown(
         """
         <h1 style='text-align: center;'>🤖 Chatbot AI</h1>
@@ -371,17 +436,18 @@ with tab1:
 
     chat_placeholder = st.empty()
 
-    col3, col4, col5, col6 = st.columns([1,1,1,1])
-    with col1:
-        sound_placeholder1 = st.empty()
-    with col2:
-        sound_placeholder2 = st.empty()
+    col3, col4, col5, col6, col7 = st.columns([1,1,1,1,1])
     with col3:
-        sound_placeholder3 = st.empty()
+        sound_placeholder1 = st.empty()
     with col4:
+        sound_placeholder2 = st.empty()
+    with col5:
+        sound_placeholder3 = st.empty()
+    with col6:
         sound_placeholder4 = st.empty()
+    with col7:
+        sound_placeholder5 = st.empty()
     chatbot.display_chat()
-
 
     if microphone_st:
         if st.session_state["bot_state"] == "prepare":
@@ -497,35 +563,49 @@ with tab1:
                     date = chatbot.process_input(text).replace("วันที่", "")
                     chatbot.person_data['birthday'] = date
                 chatbot.save_person_data()
-                bot = chatbot.update_chat_history("", "ขอบคุณสำหรับข้อมูลค่ะ")
-                chatbot.display_chat()
-                time.sleep(bot)
 
                 chatbot.person_data = chatbot.load_person_data()
 
-                response = f"สวัสดีค่ะ {chatbot.person_data['nickname']} ยินดีที่ได้รู้จักค่ะ!"
-                bot = chatbot.update_chat_history("", response)
-                chatbot.display_chat()
-                time.sleep(bot)
+                chatbot.review_person_data()
+        
+        elif st.session_state["bot_state"] == "comfirmInfo":
+            st.session_state.text_received.append(microphone_st)
+            text = st.session_state.text_received[-1]
+            if text:
+                if "ไม่ถูก" in text or "ไม่ใช่" in text:
+                    chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
+                    bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
+                    chatbot.display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "active"
+                    update_status_display()
+                elif "ใช่" in text or "ครับ" in text or "คะ" in text or "ค่ะ" in text or "ถูก" in text:
+                    chatbot.update_chat_history(text, "")
+                    chatbot.display_chat()
+                    chatbot.save_person_data()
+                    response = f"เข้าใจแล้วค่ะ! สวัสดีค่ะ {chatbot.person_data['nickname']} ยินดีที่ได้รู้จักค่ะ!"
+                    bot = chatbot.update_chat_history("", response)
+                    chatbot.display_chat()
+                    time.sleep(bot)
 
-                if not chatbot.check_birthday():
-                    pass
-                
-                chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
-                bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
-                chatbot.display_chat()
-                time.sleep(bot)
-                st.session_state["bot_state"] = "active"
-                update_status_display()
+                    if not chatbot.check_birthday():
+                        pass
+                    
+                    chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
+                    bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
+                    chatbot.display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "active"
+                    update_status_display()
 
-with tab2:
+elif selected == "Show history":
     chatbot.show_history_json_as_table(chatbot.history, "Chat History")
 
-with tab3:
+elif selected == "Show responses":
     st.write("Showing responses data")
     chatbot.show_json(chatbot.responses, "responses.json")
 
-with tab4:
+elif selected == "Show personal data":
     st.write("แก้ไขข้อมูลส่วนตัว")
     chatbot.person_data = chatbot.load_person_data()
 
