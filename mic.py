@@ -366,7 +366,7 @@ with tab1:
         status_placeholder = st.empty()
         update_status_display()
 
-
+    st.write("")
     microphone_st = speech_to_text(start_prompt="🎤 Talking", stop_prompt="Stop Talking", language='th', use_container_width=True, just_once=True, key='STT')
 
     chat_placeholder = st.empty()
