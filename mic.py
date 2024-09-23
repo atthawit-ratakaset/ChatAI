@@ -15,6 +15,7 @@ class Chatbot:
         self.responses = self.load_responses()
         self.person_data = self.load_person_data()
         self.history = self.load_history()
+        self.stage = 1
 
     def load_responses(self):
         try:
@@ -112,14 +113,34 @@ class Chatbot:
             
                 with open(temp_audio.name, "rb") as f:
                     mp3_data = f.read()
+
             b64_encoded_audio = base64.b64encode(mp3_data).decode("utf-8")
             
-            audio_html = f"""
-            <audio id="chatbot-audio" autoplay="true" style="display:none;" onended="document.getElementById('chatbot-audio').remove();">
-                <source src="data:audio/mp3;base64,{b64_encoded_audio}" type="audio/mp3">
-                Your browser does not support the audio element.
-            </audio>
-            """
+            if self.stage == 1:
+                audio_html = f"""
+                <audio id="chatbot-audio" autoplay="true" style="display:none;">
+                    <source src="data:audio/mp3;base64,{b64_encoded_audio}" type="audio/mp3">
+                </audio>
+                """
+            elif self.stage == 2:
+                audio_html = f"""
+                <audio id="chatbot-audio1" autoplay="true" style="display:none;">
+                    <source src="data:audio/mp3;base64,{b64_encoded_audio}" type="audio/mp3">
+                </audio>
+                """
+            elif self.stage == 3:
+                audio_html = f"""
+                <audio id="chatbot-audio2" autoplay="true" style="display:none;">
+                    <source src="data:audio/mp3;base64,{b64_encoded_audio}" type="audio/mp3">
+                </audio>
+                """
+            elif self.stage == 4:
+                audio_html = f"""
+                <audio id="chatbot-audio3" autoplay="true" style="display:none;">
+                    <source src="data:audio/mp3;base64,{b64_encoded_audio}" type="audio/mp3">
+                </audio>
+                """
+
             return audio_html, audio_length
         
         except Exception as e:
@@ -178,9 +199,9 @@ class Chatbot:
             "สองวันก่อนหน้าวันอะไร" : ["2 วันก่อนหน้าเป็น", "2 วันก่อนหน้าวัน"],
             "สองวันข้างหน้าหน้าวันอะไร" : ["2 วันข้างหน้าเป็น", "2 วันข้างหน้าวัน"],
             "ตอนนี้เวลา": ["ตอนนี้เวลา", "บอกเวลา", "เวลาเท่าไหร่", "ตอนนี้เวลากี่โมง", "เวลาเท่าไร", "เวลา", "ตอนนี้กี่โมง", "วันนี้กี่โมง"],
-            "ฉันชื่ออะไร": ["ผมชื่ออะไร", "ฉันชื่ออะไร", "บอกชื่อผม", "บอกชื่อฉัน", "ชื่ออะไรนะ"],
-            "ฉันชื่อเล่นอะไร" : ["ผมชื่อเล่นอะไร", "ฉันชื่อเล่นอะไร", "บอกชื่อเล่นผม", "บอกชื่อเล่นฉัน", "ผมชื่อเล่นว่า", "ฉันชื่อเล่นว่า"],
-            "ฉันเกิดวันไหน" : ["ผมเกิดวันไหน", "ฉันเกิดวันไหน", "บอกวันเกิดผม", "บอกวันเกิดฉัน", "ผมเกิดวันที่", "ฉันเกิดวันที่", "วันไหนฉันเกิด", "วันไหนผมเกิด", "ฉันเกิดตอนไหน", "ผมเกิดตอนไหน"],
+            "ฉันชื่ออะไร": ["ผมชื่ออะไร", "ฉันชื่ออะไร", "บอกชื่อผม", "บอกชื่อฉัน", "เราชื่ออะไรนะ"],
+            "ฉันชื่อเล่นอะไร" : ["ผมชื่อเล่นอะไร", "ฉันชื่อเล่นอะไร", "บอกชื่อเล่นผม", "บอกชื่อเล่นฉัน", "ผมชื่อเล่นว่า", "ฉันชื่อเล่นว่า", "ชื่อเล่นของฉัน", "ชื่อเล่นของผม", "ชื่อเล่นฉัน", "ชื่อเล่นผม"],
+            "ฉันเกิดวันไหน" : ["ผมเกิดวันไหน", "ฉันเกิดวันไหน", "บอกวันเกิดผม", "บอกวันเกิดฉัน", "ผมเกิดวันที่", "ฉันเกิดวันที่", "วันไหนฉันเกิด", "วันไหนผมเกิด", "ฉันเกิดตอนไหน", "ผมเกิดตอนไหน", "ฉันเกิดวันอะไร"],
             "วันนี้วันอะไร" : ["วันนี้วันที่"]
         }
 
@@ -222,11 +243,21 @@ class Chatbot:
 
         if user_message != "":
             st.session_state['messages'].append(f'<div style="text-align: right;">👤: {user_message}</div>')
+            self.stage = 1
 
         if bot_message != "":
             audio_button, audio_lenght = self.speak(bot_message)
+
+            if self.stage == 1:
+                sound1(audio_button)
+            elif self.stage == 2:
+                sound2(audio_button)
+            elif self.stage == 3:
+                sound3(audio_button)
+            elif self.stage == 4:
+                sound4(audio_button)
+
             st.session_state['messages'].append(f'<div style="text-align: left;">🤖: {bot_message}</div>')
-            sound(audio_button)
             return audio_lenght
             
     def display_chat(self):
@@ -234,7 +265,7 @@ class Chatbot:
             chat_html = "<br>".join(st.session_state['messages'])
             st.markdown(
                 f"""
-                <div id="chat-container" style="height: 300px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
+                <div id="chat-container" style="height: 400px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
                     {chat_html}
                 </div>
                 """,
@@ -242,21 +273,22 @@ class Chatbot:
             )
   
     def run_chatbot(self):
-
-        st.session_state['bot_state'] = "greeting"
-        # update_status_display()
         st.session_state['messages'] = []
         st.session_state.text_received = []
         self.display_chat()
         self.greet()
+
     
     def greet(self):
         if self.person_data.get("name"):
+            st.session_state['bot_state'] = "prepare"
+            update_status_display()
             response = f"สวัสดีค่ะ ใช่ คุณ{self.person_data['name']} ไหมคะ"
             bot = self.update_chat_history("", response)
-
             self.display_chat()
             time.sleep(bot)
+            st.session_state['bot_state'] = "greeting"
+            update_status_display()
         
 if 'bot_state' not in st.session_state:
     st.session_state['bot_state'] = ""
@@ -281,25 +313,38 @@ def update_status_display():
 
     status_messages = {
         "": "ไม่ได้ทำงาน",
-        "greeting": "โหมดทักทาย",
-        "active": "โหมดปกติ",
-        "new_name": "โหมดเก็บข้อมูล",
-        "new_nickname": "โหมดเก็บข้อมูล",
-        "new_birthday": "โหมดเก็บข้อมูล",
-        "prepare": "กำลังประมวลผล..."
+        "greeting": "โหมดทักทาย(พูดได้เลย)",
+        "active": "โหมดปกติ(พูดได้เลย)",
+        "new_name": "โหมดเก็บข้อมูล(พูดได้เลย)",
+        "new_nickname": "โหมดเก็บข้อมูล(พูดได้เลย)",
+        "new_birthday": "โหมดเก็บข้อมูล(พูดได้เลย)",
+        "prepare": "กำลังประมวลผล...(ห้ามพูด)"
     }
 
     status_placeholder.markdown(
         f"""
-        <div style="text-align: center; padding: 5px; border-radius: 5px; background-color: {status_colors[status_text]}; color: white; font-size: 24px; font-weight: bold;">
+        <div style="text-align: center; padding: 5px; border-radius: 5px; background-color: {status_colors[status_text]}; color: white; font-size: 18px; font-weight: bold;">
             {status_messages[status_text]}
         </div>
         """,
         unsafe_allow_html=True
     )
 
-def sound(html):
-    status_placeholder.markdown(html, unsafe_allow_html=True)
+def sound1(html):
+    sound_placeholder1.markdown(html, unsafe_allow_html=True)
+    chatbot.stage = 2
+
+def sound2(html):
+    sound_placeholder2.markdown(html, unsafe_allow_html=True)
+    chatbot.stage = 3
+
+def sound3(html):
+    sound_placeholder3.markdown(html, unsafe_allow_html=True)
+    chatbot.stage = 4
+
+def sound4(html):
+    sound_placeholder4.markdown(html, unsafe_allow_html=True)
+    chatbot.stage = 1
 
 chatbot = Chatbot()
 tab1, tab2, tab3, tab4 = st.tabs(["Home", "Show history", "Show responses", "Show personal data"])
@@ -312,21 +357,35 @@ with tab1:
         unsafe_allow_html=True
     )
 
-    st.write("")
+    col1, col2 = st.columns([2, 2])
 
-    st.button("🎤Start & Reset", on_click = chatbot.run_chatbot)
+    with col1:
+        st.button("🎤Start & Reset", on_click= chatbot.run_chatbot)
+
+    with col2:
+        status_placeholder = st.empty()
+        update_status_display()
+
 
     microphone_st = speech_to_text(start_prompt="🎤 Talking", stop_prompt="Stop Talking", language='th', use_container_width=True, just_once=True, key='STT')
 
     chat_placeholder = st.empty()
-    status_placeholder = st.empty()
+
+    col3, col4, col5, col6 = st.columns([1,1,1,1])
+    with col1:
+        sound_placeholder1 = st.empty()
+    with col2:
+        sound_placeholder2 = st.empty()
+    with col3:
+        sound_placeholder3 = st.empty()
+    with col4:
+        sound_placeholder4 = st.empty()
     chatbot.display_chat()
 
-    # update_status_display()
 
     if microphone_st:
         if st.session_state["bot_state"] == "prepare":
-            # update_status_display()
+            update_status_display()
             pass
 
         elif st.session_state["bot_state"] == "active":
@@ -334,20 +393,20 @@ with tab1:
             text = st.session_state.text_received[-1]
             if text:
                 st.session_state["bot_state"] = "prepare"
-                # update_status_display()
+                update_status_display()
                 chatbot_response = chatbot.chatbot_response(text)
                 chatbot.update_chat_history(text, "")
                 chatbot.display_chat()
                 if "ขอบคุณ" in text:
-                    bot, lenght = chatbot.update_chat_history("",chatbot_response)
+                    bot= chatbot.update_chat_history("",chatbot_response)
                     chatbot.display_chat()
-                    time.sleep(lenght)
+                    time.sleep(bot)
                 else:
                     bot = chatbot.update_chat_history("",chatbot_response)
                     chatbot.display_chat()
                     time.sleep(bot)
                 st.session_state["bot_state"] = "active"
-                # update_status_display()
+                update_status_display()
         
         elif st.session_state["bot_state"] == "greeting":
             st.session_state.text_received.append(microphone_st)
@@ -355,7 +414,7 @@ with tab1:
             if text:
                 if "ไม่ใช่" in text or "ผิด" in text:
                     st.session_state["bot_state"] = "prepare"
-                    # update_status_display()
+                    update_status_display()
                     chatbot.update_chat_history(text, "")
                     chatbot.display_chat()
                     chatbot.add_to_history_bot_fisrt(f"สวัสดีค่ะ ใช่ คุณ{chatbot.person_data['name']} ไหมคะ", text)
@@ -363,11 +422,11 @@ with tab1:
                     chatbot.display_chat()
                     time.sleep(bot)
                     st.session_state["bot_state"] = "new_name"
-                    # update_status_display()
+                    update_status_display()
 
                 elif "ใช่" in text or "ครับ" in text or "คะ" in text or "ค่ะ" in text:
                     st.session_state["bot_state"] = "prepare"
-                    # update_status_display()
+                    update_status_display()
                     chatbot.update_chat_history(text, "")
                     chatbot.display_chat()
 
@@ -381,7 +440,7 @@ with tab1:
                     chatbot.display_chat()
                     time.sleep(bot)
                     st.session_state["bot_state"] = "active"
-                    # update_status_display()
+                    update_status_display()
 
         elif st.session_state["bot_state"] == "new_name":
             chatbot.person_data = {}
@@ -389,7 +448,7 @@ with tab1:
             text = st.session_state.text_received[-1]
             if text:
                 st.session_state["bot_state"] = "prepare"
-                # update_status_display()
+                update_status_display()
                 chatbot.update_chat_history(text, "")
                 chatbot.display_chat()
                 chatbot.add_to_history_bot_fisrt("ขอโทษค่ะ ไม่ทราบว่าชื่ออะไรหรอคะ?", text)
@@ -402,14 +461,14 @@ with tab1:
                 chatbot.display_chat()
                 time.sleep(bot)
                 st.session_state["bot_state"] = "new_nickname"
-                # update_status_display()
+                update_status_display()
 
         elif st.session_state["bot_state"] == "new_nickname":
             st.session_state.text_received.append(microphone_st)
             text = st.session_state.text_received[-1]
             if text:
                 st.session_state["bot_state"] = "prepare"
-                # update_status_display()
+                update_status_display()
                 chatbot.update_chat_history(text, "")
                 chatbot.display_chat()
                 chatbot.add_to_history_bot_fisrt("ชื่อเล่นของคุณคืออะไรคะ?", text)
@@ -422,14 +481,14 @@ with tab1:
                 chatbot.display_chat()
                 time.sleep(bot)
                 st.session_state["bot_state"] = "new_birthday"
-                # update_status_display()
+                update_status_display()
 
         elif st.session_state["bot_state"] == "new_birthday":
             st.session_state.text_received.append(microphone_st)
             text = st.session_state.text_received[-1]
             if text:
                 st.session_state["bot_state"] = "prepare"
-                # update_status_display()
+                update_status_display()
                 chatbot.update_chat_history(text, "")
                 chatbot.display_chat()
                 chatbot.add_to_history_bot_fisrt("วันเกิดของคุณคืออะไรคะ?", text)
@@ -457,7 +516,7 @@ with tab1:
                 chatbot.display_chat()
                 time.sleep(bot)
                 st.session_state["bot_state"] = "active"
-                # update_status_display()
+                update_status_display()
 
 with tab2:
     chatbot.show_history_json_as_table(chatbot.history, "Chat History")
