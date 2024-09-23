@@ -233,7 +233,7 @@ class Chatbot:
             chat_html = "<br>".join(st.session_state['messages'])
             st.markdown(
                 f"""
-                <div id="chat-container" style="height: 300px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
+                <div id="chat-container" style="height: 350px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
                     {chat_html}
                 </div>
                 """,
