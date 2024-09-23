@@ -172,7 +172,7 @@ class Chatbot:
         return False
 
     def get_time(self):
-        now = datetime.now()
+        now = datetime.now() + timedelta(hours=7)
         hours = now.strftime('%H นาฬิกา')
         minutes = now.strftime('%M')
         
