@@ -225,7 +225,8 @@ class Chatbot:
 
         if bot_message != "":
             audio_button, audio_lenght = self.speak(bot_message)
-            st.session_state['messages'].append(f'<div style="text-align: left;">🤖: {bot_message} {audio_button}</div>')
+            st.session_state['messages'].append(f'<div style="text-align: left;">🤖: {bot_message}</div>')
+            sound(audio_button)
             return audio_lenght
             
     def display_chat(self):
@@ -233,7 +234,7 @@ class Chatbot:
             chat_html = "<br>".join(st.session_state['messages'])
             st.markdown(
                 f"""
-                <div id="chat-container" style="height: 350px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
+                <div id="chat-container" style="height: 300px; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
                     {chat_html}
                 </div>
                 """,
@@ -253,6 +254,7 @@ class Chatbot:
         if self.person_data.get("name"):
             response = f"สวัสดีค่ะ ใช่ คุณ{self.person_data['name']} ไหมคะ"
             bot = self.update_chat_history("", response)
+
             self.display_chat()
             time.sleep(bot)
         
@@ -296,6 +298,9 @@ def update_status_display():
         unsafe_allow_html=True
     )
 
+def sound(html):
+    status_placeholder.markdown(html, unsafe_allow_html=True)
+
 chatbot = Chatbot()
 tab1, tab2, tab3, tab4 = st.tabs(["Home", "Show history", "Show responses", "Show personal data"])
 
@@ -306,7 +311,6 @@ with tab1:
         """, 
         unsafe_allow_html=True
     )
-    status_placeholder = st.empty()
 
     st.write("")
 
@@ -315,6 +319,7 @@ with tab1:
     microphone_st = speech_to_text(start_prompt="🎤 Talking", stop_prompt="Stop Talking", language='th', use_container_width=True, just_once=True, key='STT')
 
     chat_placeholder = st.empty()
+    status_placeholder = st.empty()
     chatbot.display_chat()
 
     # update_status_display()
@@ -334,9 +339,9 @@ with tab1:
                 chatbot.update_chat_history(text, "")
                 chatbot.display_chat()
                 if "ขอบคุณ" in text:
-                    bot = chatbot.update_chat_history("",chatbot_response)
+                    bot, lenght = chatbot.update_chat_history("",chatbot_response)
                     chatbot.display_chat()
-                    time.sleep(bot)
+                    time.sleep(lenght)
                 else:
                     bot = chatbot.update_chat_history("",chatbot_response)
                     chatbot.display_chat()
