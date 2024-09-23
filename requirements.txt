@@ -2,4 +2,4 @@ gTTS
 mutagen
 pandas
 streamlit-mic-recorder
-streamlit_option_menu
+streamlit-option-menu
