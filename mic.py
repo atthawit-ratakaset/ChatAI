@@ -193,8 +193,8 @@ class Chatbot:
                 update_status_display()
 
     def get_time(self):
-        #now = datetime.now() + timedelta(hours=7) # for build
-        now = datetime.now()
+        now = datetime.now() + timedelta(hours=7) # for build
+        #now = datetime.now()
         hours = now.strftime('%H นาฬิกา')
         minutes = now.strftime('%M')
         
