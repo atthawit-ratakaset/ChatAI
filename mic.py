@@ -17,6 +17,8 @@ class Chatbot:
         self.person_data = self.load_person_data()
         self.history = self.load_history()
         self.stage = 1
+        self.greeting_response = f"สวัสดีค่ะ ใช่ คุณ{self.person_data['name']} ไหมคะ"
+        self.comfirmInfo_response = ""
 
     def load_responses(self):
         try:
@@ -214,16 +216,28 @@ class Chatbot:
         return user_input
 
     def chatbot_response(self, user_input):
+        pronouns = ["ฉัน", "ผม", "เรา"]
         grouped_responses = {
-            "สวัสดี": ["สวัสดี", "สวัสดีค่ะ", "หวัดดี", "ดี"],
-            "คุณชื่ออะไร": ["คุณชื่ออะไร", "บอกชื่อหน่อย", "ชื่อของคุณ"],
+            "สวัสดี": ["สวัสดี", "สวัสดีค่ะ", "หวัดดี", "ดี" , "โหล"],
+            "คุณชื่ออะไร": ["คุณชื่ออะไร", "บอกชื่อหน่อย", "ชื่อของคุณ", "เธอชื่ออะไร"],
             "คุณเกิดที่ไหน" : ["คุณเกิดที่ไหน"],
+            "รู้จักฉันไหม" : ["รู้จัก{}ไหม".format(pronoun) for pronoun in pronouns],
             "สองวันก่อนหน้าวันอะไร" : ["2 วันก่อนหน้าเป็น", "2 วันก่อนหน้าวัน"],
             "สองวันข้างหน้าหน้าวันอะไร" : ["2 วันข้างหน้าเป็น", "2 วันข้างหน้าวัน"],
             "ตอนนี้เวลา": ["ตอนนี้เวลา", "บอกเวลา", "เวลาเท่าไหร่", "ตอนนี้เวลากี่โมง", "เวลาเท่าไร", "เวลา", "ตอนนี้กี่โมง", "วันนี้กี่โมง"],
-            "ฉันชื่ออะไร": ["ผมชื่ออะไร", "ฉันชื่ออะไร", "บอกชื่อผม", "บอกชื่อฉัน", "เราชื่ออะไรนะ"],
-            "ฉันชื่อเล่นอะไร" : ["ผมชื่อเล่นอะไร", "ฉันชื่อเล่นอะไร", "บอกชื่อเล่นผม", "บอกชื่อเล่นฉัน", "ผมชื่อเล่นว่า", "ฉันชื่อเล่นว่า", "ชื่อเล่นของฉัน", "ชื่อเล่นของผม", "ชื่อเล่นฉัน", "ชื่อเล่นผม"],
-            "ฉันเกิดวันไหน" : ["ผมเกิดวันไหน", "ฉันเกิดวันไหน", "บอกวันเกิดผม", "บอกวันเกิดฉัน", "ผมเกิดวันที่", "ฉันเกิดวันที่", "วันไหนฉันเกิด", "วันไหนผมเกิด", "ฉันเกิดตอนไหน", "ผมเกิดตอนไหน", "ฉันเกิดวันอะไร"],
+            "ฉันชื่ออะไร": ["{}ชื่ออะไร".format(pronoun) for pronoun in pronouns] +
+                    ["บอกชื่อ{}".format(pronoun) for pronoun in pronouns],
+            "ฉันชื่อเล่นอะไร": ["{}ชื่อเล่นอะไร".format(pronoun) for pronoun in pronouns] +
+                        ["บอกชื่อเล่น{}".format(pronoun) for pronoun in pronouns] +
+                        ["{}ชื่อเล่นว่า".format(pronoun) for pronoun in pronouns] +
+                        ["ชื่อเล่นของ{}คืออะไร".format(pronoun) for pronoun in pronouns] +
+                        ["ชื่อเล่น{}คือ".format(pronoun) for pronoun in pronouns],
+            "ฉันเกิดวันไหน": ["{}เกิดวันไหน".format(pronoun) for pronoun in pronouns] +
+                      ["บอกวันเกิด{}".format(pronoun) for pronoun in pronouns] +
+                      ["{}เกิดวันที่".format(pronoun) for pronoun in pronouns] +
+                      ["วันไหน{}เกิด".format(pronoun) for pronoun in pronouns] +
+                      ["{}เกิดตอนไหน".format(pronoun) for pronoun in pronouns] +
+                      ["{}เกิดวันอะไร".format(pronoun) for pronoun in pronouns],
             "วันนี้วันอะไร" : ["วันนี้วันที่"]
         }
 
@@ -239,10 +253,16 @@ class Chatbot:
             "ตอนนี้เวลา": self.get_time(),
             "ฉันชื่ออะไร" : f"คุณชื่อ {self.person_data.get('name', 'ไม่ทราบ')} ค่ะ",
             "ฉันชื่อเล่นอะไร" : f"คุณชื่อเล่นว่า {self.person_data.get('nickname', 'ไม่ทราบ')} ค่ะ",
-            "ฉันเกิดวันไหน" : f"คุณเกิดวันที่ {self.person_data.get('birthday', 'ไม่ทราบ')} ค่ะ"
+            "ฉันเกิดวันไหน" : f"คุณเกิดวันที่ {self.person_data.get('birthday', 'ไม่ทราบ')} ค่ะ",
+            "รู้จักฉันไหม" : f"รู้จักค่ะ! คุณชื่อ {self.person_data.get('nickname', 'ไม่ทราบ')} ค่ะ"
         }
 
         self.responses.update(additional_responses)
+
+        if "สวัสดี" in user_input and ("คุณชื่ออะไร" in user_input or "เธอชื่ออะไร" in user_input):
+            response = "สวัสดีค่ะ! ฉันชื่อ Chatbot ค่ะ"
+            self.add_to_history(user_input, response)
+            return response
 
         for response, keywords in grouped_responses.items():
             for keyword in keywords:
@@ -290,7 +310,7 @@ class Chatbot:
             chat_html = "<br>".join(st.session_state['messages'])
             st.markdown(
                 f"""
-                <div id="chat-container" style="height: 40vh; overflow-y: auto; border: 5px solid #ccc; padding: 10px;">
+                <div id="chat-container" style="height: 45vh; overflow-y: auto; border: 3px solid #ccc; padding: 10px;">
                     {chat_html}
                 </div>
                 """,
@@ -307,7 +327,7 @@ class Chatbot:
         if self.person_data.get("name"):
             st.session_state['bot_state'] = "prepare"
             update_status_display()
-            response = f"สวัสดีค่ะ ใช่ คุณ{self.person_data['name']} ไหมคะ"
+            response = self.greeting_response
             bot = self.update_chat_history("", response)
             self.display_chat()
             time.sleep(bot)
@@ -317,7 +337,7 @@ class Chatbot:
     def review_person_data(self):
         st.session_state['bot_state'] = "prepare"
         update_status_display()
-        response = "ขอบคุณสำหรับข้อมูลค่ะ ข้อมูลที่คุณให้มามีดังนี้\n"
+        self.comfirmInfo_response = "ขอบคุณสำหรับข้อมูลค่ะ ข้อมูลที่คุณให้มามีดังนี้\n"
     
         list_data = []
         for field in ['name', 'nickname', 'birthday']:
@@ -332,8 +352,8 @@ class Chatbot:
             list_data.append(f"{text}: {data}")
             response += f"{text}: {data}\n"
         
-        response += "ข้อมูลถูกต้องหรือไม่คะ?"
-        bot = self.update_chat_history("", response)
+        self.comfirmInfo_response += "ข้อมูลถูกต้องหรือไม่คะ?"
+        bot = self.update_chat_history("", self.comfirmInfo_response)
         self.display_chat()
         time.sleep(bot)
 
@@ -488,23 +508,31 @@ if selected == "Home":
                     update_status_display()
                     chatbot.update_chat_history(text, "")
                     chatbot.display_chat()
-                    chatbot.add_to_history_bot_fisrt(f"สวัสดีค่ะ ใช่ คุณ{chatbot.person_data['name']} ไหมคะ", text)
+                    chatbot.add_to_history_bot_fisrt(chatbot.greeting_response, text)
                     bot = chatbot.update_chat_history("", "ขอโทษค่ะ ไม่ทราบว่าชื่ออะไรหรอคะ?")
                     chatbot.display_chat()
                     time.sleep(bot)
                     st.session_state["bot_state"] = "new_name"
                     update_status_display()
-
-                elif "ใช่" in text or "ครับ" in text or "คะ" in text or "ค่ะ" in text:
+                elif "ใช่" in text or text == "ครับ" or text == "คะ" or text == "ค่ะ":
                     st.session_state["bot_state"] = "prepare"
                     update_status_display()
                     chatbot.update_chat_history(text, "")
                     chatbot.display_chat()
-
-                    chatbot.add_to_history_bot_fisrt(f"สวัสดีค่ะ ใช่ คุณ{chatbot.person_data['name']} ไหมคะ", text)
-
+                    chatbot.add_to_history_bot_fisrt(chatbot.greeting_response, text)
                     chatbot.check_birthday()
-                        
+                else:
+                    chatbot.update_chat_history(text, "")
+                    chatbot.display_chat()
+                    chatbot.add_to_history_bot_fisrt(chatbot.greeting_response, text)
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    chatbot.greeting_response = f"สวัสดีค่ะ ไม่ทราบว่าใช่ คุณ{chatbot.person_data['name']} ไหมคะ"
+                    bot = chatbot.update_chat_history("", chatbot.greeting_response)
+                    chatbot.display_chat()
+                    time.sleep(bot)
+                    st.session_state['bot_state'] = "greeting"
+                    update_status_display()
 
         elif st.session_state["bot_state"] == "new_name":
             chatbot.person_data = {}
@@ -571,23 +599,38 @@ if selected == "Home":
             text = st.session_state.text_received[-1]
             if text:
                 if "ไม่ถูก" in text or "ไม่ใช่" in text:
-                    chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
+                    chatbot.update_chat_history(text, "")
+                    chatbot.display_chat()
+                    chatbot.add_to_history_bot_fisrt(chatbot.comfirmInfo_response, text)
                     bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
+                    chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
                     chatbot.display_chat()
                     time.sleep(bot)
                     st.session_state["bot_state"] = "active"
                     update_status_display()
-                elif "ใช่" in text or "ครับ" in text or "คะ" in text or "ค่ะ" in text or "ถูก" in text:
+                elif "ใช่" in text or text == "ครับ" or text == "คะ" or text == "ค่ะ" or "ถูก" in text:
                     chatbot.update_chat_history(text, "")
                     chatbot.display_chat()
                     chatbot.save_person_data()
+                    chatbot.add_to_history_bot_fisrt(chatbot.comfirmInfo_response, text)
                     response = f"เข้าใจแล้วค่ะ! สวัสดีค่ะ {chatbot.person_data['nickname']} ยินดีที่ได้รู้จักค่ะ!"
+                    chatbot.add_to_history_bot_fisrt(chatbot.comfirmInfo_response, "-")
                     bot = chatbot.update_chat_history("", response)
                     chatbot.display_chat()
                     time.sleep(bot)
-
                     chatbot.check_birthday()
-
+                else:
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    chatbot.update_chat_history(text, "")
+                    chatbot.display_chat()
+                    chatbot.add_to_history_bot_fisrt(chatbot.greeting_response, text)
+                    chatbot.comfirmInfo_response = "ข้อมูลถูกต้องมั้ยคะ?"
+                    bot = chatbot.update_chat_history("", chatbot.comfirmInfo_response)
+                    chatbot.display_chat()
+                    time.sleep(bot)
+                    st.session_state['bot_state'] = "comfirmInfo"
+                    update_status_display()
 
 elif selected == "Show history":
     chatbot.show_history_json_as_table(chatbot.history, "Chat History")
