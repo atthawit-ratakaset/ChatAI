@@ -453,6 +453,15 @@ if selected == "Home":
         sound_placeholder5 = st.empty()
     chatbot.display_chat()
 
+    if st.session_state['bot_state'] == "prepare":
+        st.session_state['bot_state'] = "active"
+        update_status_display()
+        bot = chatbot.update_chat_history("", "โปรแกรมขัดข้อง! เนื่องจากโดนขัดระวาง process! \n กลับเข้าสู่โหมดปกติ")
+        chatbot.add_to_history_bot_fisrt("โปรแกรมขัดข้อง! เนื่องจากโดนขัดระวัง process! \n กลับเข้าสู่โหมดปกติ", '-')
+        chatbot.display_chat()
+        time.sleep(bot)
+
+
     if microphone_st:
         if st.session_state["bot_state"] == "prepare":
             update_status_display()
@@ -581,18 +590,15 @@ if selected == "Home":
                     chatbot.update_chat_history(text, "")
                     chatbot.display_chat()
                     chatbot.add_to_history_bot_fisrt(chatbot.comfirmInfo_response, text)
-                    bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
-                    chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
-                    chatbot.display_chat()
-                    time.sleep(bot)
-                    st.session_state["bot_state"] = "active"
-                    update_status_display()
+                    chatbot.fixInfo_response()
                     
                 elif "ใช่" in text or text == "ครับ" or text == "คะ" or text == "ค่ะ" or "ถูก" in text:
                     chatbot.update_chat_history(text, "")
                     chatbot.display_chat()
                     chatbot.save_person_data()
                     chatbot.add_to_history_bot_fisrt(chatbot.comfirmInfo_response, text)
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
                     response = f"เข้าใจแล้วค่ะ! สวัสดีค่ะ {chatbot.person_data['nickname']} ยินดีที่ได้รู้จักค่ะ!"
                     chatbot.add_to_history_bot_fisrt(chatbot.comfirmInfo_response, "-")
                     bot = chatbot.update_chat_history("", response)
@@ -604,9 +610,9 @@ if selected == "Home":
                     update_status_display()
                     chatbot.update_chat_history(text, "")
                     chatbot.display_chat()
-                    chatbot.add_to_history_bot_fisrt(chatbot.greeting_response, text)
-                    chatbot.comfirmInfo_response = "ข้อมูลถูกต้องมั้ยคะ?"
-                    bot = chatbot.update_chat_history("", chatbot.comfirmInfo_response)
+                    chatbot.add_to_history_bot_fisrt(chatbot.comfirmInfo_response, text)
+                    comfirmInfo_response = "ข้อมูลถูกต้องมั้ยคะ?"
+                    bot = chatbot.update_chat_history("", comfirmInfo_response)
                     chatbot.display_chat()
                     time.sleep(bot)
                     st.session_state['bot_state'] = "comfirmInfo"
