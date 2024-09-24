@@ -350,14 +350,12 @@ class Chatbot:
                 text = 'วันเกิด'
             data = self.person_data.get(field, 'ไม่ทราบ')
             list_data.append(f"{text}: {data}")
-            response += f"{text}: {data}\n"
+            self.comfirmInfo_response += f"{text}: {data}\n"
         
         self.comfirmInfo_response += "ข้อมูลถูกต้องหรือไม่คะ?"
         bot = self.update_chat_history("", self.comfirmInfo_response)
         self.display_chat()
         time.sleep(bot)
-
-        self.add_to_history_bot_fisrt(list_data, '-')
 
         st.session_state['bot_state'] = "comfirmInfo"
         update_status_display()
