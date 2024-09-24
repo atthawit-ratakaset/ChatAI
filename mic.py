@@ -88,7 +88,8 @@ class Chatbot:
         df = pd.DataFrame(json_data)
         df.index += 1
         df = df.rename(columns={'timestamp': 'Timestamp', 'bot_input': 'Bot Input', 'user_input': 'User Input'})
-        df['Bot Input'] = df['Bot Input'].apply(self.convert_list_to_string)
+        if self.history != []:
+            df['Bot Input'] = df['Bot Input'].apply(self.convert_list_to_string)
         st.dataframe(df)
 
     def add_to_history(self, user_input, bot_input):
@@ -177,13 +178,19 @@ class Chatbot:
             birthday = " ".join(self.person_data['birthday'].split()[:2])
 
             if today == birthday:
-                self.add_to_history_bot_fisrt(f"สุขสันต์วันเกิดค่ะ คุณ{self.person_data['nickname']} ขอให้วันนี้เป็นวันที่ดีสำหรับคุณค่ะ!", '-')
-                bot = self.update_chat_history("", f"สุขสันต์วันเกิดค่ะ คุณ{self.person_data['nickname']} ขอให้วันนี้เป็นวันที่ดีสำหรับคุณค่ะ!")
+                self.add_to_history_bot_fisrt(f"สุขสันต์วันเกิดค่ะ คุณ{self.person_data['nickname']} ขอให้วันนี้เป็นวันที่ดีสำหรับคุณค่ะ! \n ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
+                bot = self.update_chat_history("", f"สุขสันต์วันเกิดค่ะ คุณ{self.person_data['nickname']} ขอให้วันนี้เป็นวันที่ดีสำหรับคุณค่ะ! \n ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
                 self.display_chat()
                 time.sleep(bot)
-                return True
-        
-        return False
+                st.session_state["bot_state"] = "active"
+                update_status_display()
+            else:
+                self.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
+                bot = self.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
+                self.display_chat()
+                time.sleep(bot)
+                st.session_state["bot_state"] = "active"
+                update_status_display()
 
     def get_time(self):
         #now = datetime.now() + timedelta(hours=7) # for build
@@ -262,6 +269,7 @@ class Chatbot:
 
         if bot_message != "":
             audio_button, audio_lenght = self.speak(bot_message)
+            bot_message = bot_message.replace('\n', '<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
 
             if self.stage == 1:
                 sound1(audio_button)
@@ -309,11 +317,9 @@ class Chatbot:
     def review_person_data(self):
         st.session_state['bot_state'] = "prepare"
         update_status_display()
-        bot = self.update_chat_history("", "ขอบคุณสำหรับข้อมูลค่ะ ข้อมูลที่คุณให้มามีดังนี้")
-        self.display_chat()
-        time.sleep(bot)
+        response = "ขอบคุณสำหรับข้อมูลค่ะ ข้อมูลที่คุณให้มามีดังนี้\n"
+    
         list_data = []
-        
         for field in ['name', 'nickname', 'birthday']:
             text = ''
             if field == 'name':
@@ -322,17 +328,17 @@ class Chatbot:
                 text = 'ชื่อเล่น'
             elif field == 'birthday':
                 text = 'วันเกิด'
-            list_data.append(f"{text}: {self.person_data.get(field, 'ไม่ทราบ')}")
-            response = f"{text}: {self.person_data.get(field, 'ไม่ทราบ')}"
-            bot = self.update_chat_history("", response)
-            self.display_chat()
-            time.sleep(bot)
-
-        self.add_to_history_bot_fisrt(list_data, '-')
+            data = self.person_data.get(field, 'ไม่ทราบ')
+            list_data.append(f"{text}: {data}")
+            response += f"{text}: {data}\n"
         
-        bot = self.update_chat_history("", "ข้อมูลถูกต้องหรือไม่คะ?")
+        response += "ข้อมูลถูกต้องหรือไม่คะ?"
+        bot = self.update_chat_history("", response)
         self.display_chat()
         time.sleep(bot)
+
+        self.add_to_history_bot_fisrt(list_data, '-')
+
         st.session_state['bot_state'] = "comfirmInfo"
         update_status_display()
         
@@ -397,7 +403,6 @@ def sound4(html):
 def sound5(html):
     sound_placeholder5.markdown(html, unsafe_allow_html=True)
     chatbot.stage = 1
-
 
 chatbot = Chatbot()
 
@@ -498,15 +503,8 @@ if selected == "Home":
 
                     chatbot.add_to_history_bot_fisrt(f"สวัสดีค่ะ ใช่ คุณ{chatbot.person_data['name']} ไหมคะ", text)
 
-                    if not chatbot.check_birthday():
-                        pass
-
-                    chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
-                    bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
-                    chatbot.display_chat()
-                    time.sleep(bot)
-                    st.session_state["bot_state"] = "active"
-                    update_status_display()
+                    chatbot.check_birthday()
+                        
 
         elif st.session_state["bot_state"] == "new_name":
             chatbot.person_data = {}
@@ -588,15 +586,8 @@ if selected == "Home":
                     chatbot.display_chat()
                     time.sleep(bot)
 
-                    if not chatbot.check_birthday():
-                        pass
-                    
-                    chatbot.add_to_history_bot_fisrt("ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?", '-')
-                    bot = chatbot.update_chat_history("", "ไม่ทราบว่าวันนี้ต้องการอะไรหรอกคะ?")
-                    chatbot.display_chat()
-                    time.sleep(bot)
-                    st.session_state["bot_state"] = "active"
-                    update_status_display()
+                    chatbot.check_birthday()
+
 
 elif selected == "Show history":
     chatbot.show_history_json_as_table(chatbot.history, "Chat History")
