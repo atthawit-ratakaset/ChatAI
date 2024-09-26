@@ -2,11 +2,14 @@ import re
 
 def calculate_ai(text):
     try:
+        text = text.replace('บวก', '+')
+        text = text.replace('ลบ', '-')
+        text = text.replace('คูณ', '*')
+        text = text.replace('หาร', '/')
+        
         text = text.replace(',', '')
         
-        expression = re.findall(r'[0-9+\-*/.]+', text)
-        
-        expression = ' '.join(expression)
+        expression = ''.join(re.findall(r'[0-9+\-*/.]+', text))
         
         if expression:
             result = eval(expression)
@@ -16,8 +19,8 @@ def calculate_ai(text):
             else:
                 response = f"คำตอบคือ {result:.2f}"
         else:
-            response = "ไม่พบสมการในข้อความที่คุณป้อน"
+            response = "ไม่สามารถตอบได้ค่ะ ขอโทษด้วยค่ะ"
         
         return response
     except Exception as e:
-        return f"เกิดข้อผิดพลาด: {str(e)}"
+        return f"ไม่สามารถตอบได้ค่ะ ขอโทษด้วยค่ะ"
