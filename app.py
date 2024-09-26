@@ -237,7 +237,7 @@ class Chatbot:
 
         self.responses.update(additional_responses)
 
-        if "+" in user_input or "-" in user_input or "*" in user_input or "/" in user_input:
+        if any(op in user_input for op in ["+", "-", "*", "/"]) and any(char.isdigit() for char in user_input):
             response = calculate_ai(user_input)
             self.add_to_history(user_input, response)
 
