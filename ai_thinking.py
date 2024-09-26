@@ -27,23 +27,20 @@ def calculate_ai(text):
         return f"ไม่สามารถตอบได้ค่ะ ขอโทษด้วยค่ะ"
 
 def word_translator(text):
-
-    if "ในภาษาอังกฤษคือ" in text:
-        text = text.replace("ในภาษาอังกฤษคือ", "").strip()
-    if "ในภาษาอังกฤษ" in text:
-        text = text.replace("ในภาษาอังกฤษ", "").strip()
-    if "ภาษาอังกฤษคือ" in text:
-        text = text.replace("ภาษาอังกฤษคือ", "").strip()
-    if "ภาษาอังกฤษ" in text:
-        text = text.replace("ภาษาอังกฤษ", "").strip()
-    if "แปล" in text:
-        text = text.replace("แปล", "").strip()
-    if "คำว่า" in text:
-        text = text.replace("คำว่า", "").strip()
-    if "ช่วย" in text:
-        text = text.replace("ช่วย", "").strip()
-    if "หน่อย" in text:
-        text = text.replace("หน่อย", "").strip()
+    start_phrases = ["แปลคำว่า", "ช่วยแปลคำว่า", "คำว่า", "แปล", "ช่วยแปล"]
+    for phrase in start_phrases:
+        if text.startswith(phrase):
+            text = text[len(phrase):].strip()
+            break
+    end_phrases = [
+        "ในภาษาอังกฤษคือ", "ภาษาอังกฤษคือ", "ในภาษาอังกฤษคืออะไร", 
+        "ภาษาอังกฤษคืออะไร", "เป็นภาษาอังกฤษให้หน่อย", "เป็นภาษาอังกฤษหน่อย", 
+        "เป็นภาษาอังกฤษ"
+    ]
+    for phrase in end_phrases:
+        if text.endswith(phrase) and len(text) > len(phrase):
+            text = text[:-len(phrase)].strip()
+            break
     
     translator = Translator()
     result = translator.translate(text, src='th', dest='en')
