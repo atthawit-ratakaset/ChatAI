@@ -3,3 +3,4 @@ mutagen
 pandas
 streamlit-mic-recorder
 streamlit-option-menu
+googletrans==4.0.0-rc1
