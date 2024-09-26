@@ -27,7 +27,7 @@ def calculate_ai(text):
         return f"ไม่สามารถตอบได้ค่ะ ขอโทษด้วยค่ะ"
 
 def word_translator(text):
-    start_phrases = ["แปลคำว่า", "ช่วยแปลคำว่า", "คำว่า", "แปล", "ช่วยแปล"]
+    start_phrases = ["ช่วยแปลคำว่า", "ช่วยแปลประโยค", "แปลประโยค", "แปลคำว่า", "ช่วยแปล", "แปล", "คำว่า", "ประโยค"]
     for phrase in start_phrases:
         if text.startswith(phrase):
             text = text[len(phrase):].strip()
