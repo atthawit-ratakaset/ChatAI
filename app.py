@@ -257,6 +257,10 @@ class Chatbot:
     def run_chatbot(self):
         st.session_state['messages'] = []
         st.session_state.text_received = []
+        st.session_state['last_bot_state'] = ""
+        st.session_state['unknown_question'] = None
+        st.session_state['learning_answer'] = None
+        st.session_state['updateInfo_stage'] = None
         display_chat()
         self.greet()
 
@@ -344,8 +348,17 @@ if 'comfirmInfo_response' not in st.session_state:
 if 'fixInfo_response' not in st.session_state:
     st.session_state['fixInfo_response'] = "ขอโทษค่ะ ขอข้อมูลที่ต้องการแก้ไขใหม่ค่ะ \n กรุณาพูดข้อมูลที่ต้องการแก้ไขค่ะ? (เช่น ชื่อ, ชื่อเล่น หรือ วันเกิด)"
 
+#stage for update person data
 if 'updateInfo_stage' not in st.session_state:
     st.session_state['updateInfo_stage'] = None
+
+#store learning answer
+if 'learning_answer' not in st.session_state:
+    st.session_state['learning_answer'] = None
+
+#store unknown question from user
+if 'unknown_question' not in st.session_state:
+    st.session_state['unknown_question'] = None
 
 def update_status_display():
     status_text = st.session_state['bot_state']
@@ -358,7 +371,9 @@ def update_status_display():
         "new_birthday": "#FF0000",
         "prepare": "#00BFFF",
         "comfirmInfo": "#4CAF50",
-        "changeInfo" : "#FF0000"
+        "changeInfo" : "#FF0000",
+        "learning_confirm": "#1bf7f4",
+        "learning_mode": "#1bf7f4"
     }
 
     status_messages = {
@@ -370,7 +385,9 @@ def update_status_display():
         "new_birthday": "โหมดเก็บข้อมูล(พูดได้เลย)",
         "prepare": "กำลังประมวลผล...(ห้ามพูด)",
         "comfirmInfo": "โหมดยืนยัน(พูดได้เลย)",
-        "changeInfo" : "โหมดแก้ไขข้อมูล(พูดได้เลย)"
+        "changeInfo" : "โหมดแก้ไขข้อมูล(พูดได้เลย)",
+        "learning_confirm": "โหมดยืนยันการเรียนรู้(พูดได้เลย)",
+        "learning_mode": "โหมดการเรียนรู้(พูดได้เลย)"
     }
 
     status_placeholder.markdown(
@@ -517,18 +534,146 @@ if selected == "Home":
                     time.sleep(bot)
                     st.session_state["bot_state"] = "off"
                     update_status_display()
+                
+                if "ขอโทษค่ะ ฉันไม่เข้าใจสิ่งที่คุณพูด" in chatbot_response:
+                    st.session_state['last_bot_state'] = "learning_confirm"
+                    st.session_state['unknown_question'] = chatbot.process_input(text)
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    bot = update_chat_history("",chatbot_response)
+                    display_chat()
+                    time.sleep(bot)
+                    bot = update_chat_history("","คุณต้องการสอนฉันไหมคะ?")
+                    display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "learning_confirm"
+                    update_status_display()
                 else:
                     bot = update_chat_history("",chatbot_response)
                     display_chat()
                     time.sleep(bot)
-                st.session_state["bot_state"] = "active"
-                update_status_display()
+                    st.session_state["bot_state"] = "active"
+                    update_status_display()
         
+        elif st.session_state["bot_state"] == "learning_confirm":
+            st.session_state.text_received.append(microphone_st)
+            text = st.session_state.text_received[-1]
+            if text:
+                if st.session_state['updateInfo_stage'] == "comfirmUpdate_learning":
+                    if "ไม่ถูก" in text or "ไม่ใช่" in text or text == "ไม่" or "ผิด" in text or "ไม่ครับ" in text or "ไม่คะ" in text or "ไม่ค่ะ" in text:
+                        st.session_state['last_bot_state'] = "learning_mode"
+                        st.session_state['updateInfo_stage'] = None
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.add_to_history_bot_fisrt(f"คุณต้องการให้ฉันตอบคำถามนี้ว่า \n {st.session_state['learning_answer']} ใช่มั้ยคะ?", text)
+                        st.session_state['learning_answer'] = None
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        bot = update_chat_history("", "คุณต้องการสอนให้ฉันตอบคำถามนี้ว่าอะไรคะ?")
+                        display_chat()
+                        time.sleep(bot)
+                        st.session_state['bot_state'] = "learning_mode"
+                        update_status_display()
+                        
+                    elif "ใช่" in text or text == "ครับ" or text == "คะ" or text == "ค่ะ" or "ถูก" in text:
+                        st.session_state['updateInfo_stage'] = None
+                        st.session_state['last_bot_state'] = "active"
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.add_to_history_bot_fisrt(f"คุณต้องการให้ฉันตอบคำถามนี้ว่า \n {st.session_state['learning_answer']} ใช่มั้ยคะ?", text)
+                        if not st.session_state['learning_answer'].endswith("ค่ะ"):
+                            st.session_state['learning_answer'] += " ค่ะ"
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        chatbot.responses[st.session_state['unknown_question']] = st.session_state['learning_answer']
+                        chatbot.save_responses()
+                        chatbot.responses = chatbot.load_responses()
+                        st.session_state['unknown_question'] = None
+                        st.session_state['learning_answer'] = None
+                        bot = update_chat_history("", "ขอบคุณที่ให้ข้อมูลค่ะ ไม่ทราบว่าวันนี้ต้องการอะไรอีกมั้ยคะ?")
+                        chatbot.add_to_history_bot_fisrt("ขอบคุณที่ให้ข้อมูลค่ะ ไม่ทราบว่าวันนี้ต้องการอะไรอีกมั้ยคะ?", "-")
+                        display_chat()
+                        time.sleep(bot)
+                        st.session_state['bot_state'] = "active"
+                        update_status_display()
+
+                    else:
+                        st.session_state['updateInfo_stage'] = "comfirmUpdate_learning"
+                        st.session_state['last_bot_state'] = "learning_confirm"
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.add_to_history_bot_fisrt(f"คุณต้องการให้ฉันตอบคำถามนี้ว่า \n {st.session_state['learning_answer']} ใช่มั้ยคะ?", text)
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        bot = update_chat_history("", f"คุณต้องการให้ฉันตอบคำถามนี้ว่า \n {st.session_state['learning_answer']} ใช่มั้ยคะ?")
+                        display_chat()
+                        time.sleep(bot)
+                        st.session_state["bot_state"] = "learning_confirm"
+                        update_status_display()
+                        
+                else:
+                    if "ไม่ต้องการ" in text or "ไม่อยากสอน" in text or text == "ไม่" or "ไม่สอน" in text or "ไม่ครับ" in text or "ไม่คะ" in text or "ไม่ค่ะ" in text:
+                        st.session_state['last_bot_state'] = "active"
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.add_to_history_bot_fisrt("คุณต้องการสอนฉันไหมคะ?", text)
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        bot = update_chat_history("","รับทราบค่ะ! ไม่ทราบว่าต้องการอะไรอีกมั้ยคะ?")
+                        chatbot.add_to_history_bot_fisrt("รับทราบค่ะ! ไม่ทราบว่าต้องการอะไรอีกมั้ยคะ?", "-")
+                        display_chat()
+                        time.sleep(bot)
+                        st.session_state["bot_state"] = "active"
+                        update_status_display() 
+                    elif "ใช่" in text or text == "ครับ" or text == "คะ" or text == "ค่ะ" or "ต้องการ" in text:
+                        st.session_state['last_bot_state'] = "learning_mode"
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.add_to_history_bot_fisrt("คุณต้องการสอนฉันไหมคะ?", text)
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        response = f"คุณต้องการสอนให้ฉันตอบคำถามนี้ว่าอะไรคะ?"
+                        bot = update_chat_history("", response)
+                        display_chat()
+                        time.sleep(bot)
+                        st.session_state["bot_state"] = "learning_mode"
+                        update_status_display()
+                    else:
+                        st.session_state['last_bot_state'] = "learning_confirm"
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.add_to_history_bot_fisrt("คุณต้องการสอนฉันไหมคะ?", text)
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        bot = update_chat_history("", "คุณต้องการสอนฉันไหมคะ?")
+                        display_chat()
+                        time.sleep(bot)
+                        st.session_state['bot_state'] = "learning_confirm"
+                        update_status_display()
+
+        elif st.session_state["bot_state"] == "learning_mode":
+            st.session_state.text_received.append(microphone_st)
+            text = st.session_state.text_received[-1]
+            if text:
+                st.session_state['last_bot_state'] = "learning_confirm"
+                st.session_state['updateInfo_stage'] = "comfirmUpdate_learning"
+                update_chat_history(text, "")
+                display_chat()
+                chatbot.add_to_history_bot_fisrt("รับทราบค่ะ! คุณต้องการสอนให้ฉันตอบคำถามนี้ว่าอะไรคะ?", text)
+                st.session_state['learning_answer'] = chatbot.process_input(text)
+                st.session_state["bot_state"] = "prepare"
+                update_status_display()
+                bot = update_chat_history("", f"คุณต้องการให้ฉันตอบคำถามนี้ว่า \n {st.session_state['learning_answer']} ใช่มั้ยคะ?")
+                display_chat()
+                time.sleep(bot)
+                st.session_state["bot_state"] = "learning_confirm"
+                update_status_display()
+
         elif st.session_state["bot_state"] == "greeting":
             st.session_state.text_received.append(microphone_st)
             text = st.session_state.text_received[-1]
             if text:
-                if "ไม่ใช่" in text or "ผิด" in text or text == "ไม่":
+                if "ไม่ใช่" in text or "ผิด" in text or text == "ไม่" or "ไม่ครับ" in text or "ไม่คะ" in text or "ไม่ค่ะ" in text:
                     st.session_state['last_bot_state'] = "new_name"
                     st.session_state["bot_state"] = "prepare"
                     update_status_display()
@@ -689,7 +834,7 @@ if selected == "Home":
             text = st.session_state.text_received[-1]
             if text:
                 if st.session_state['updateInfo_stage'] == "comfirmUpdate_name" or st.session_state['updateInfo_stage'] == "comfirmUpdate_nickname" or st.session_state['updateInfo_stage'] == "comfirmUpdate_birthday":
-                    if "ไม่ถูก" in text or "ไม่ใช่" in text or text == "ไม่":
+                    if "ไม่ถูก" in text or "ไม่ใช่" in text or text == "ไม่" or "ไม่ครับ" in text or "ไม่คะ" in text or "ไม่ค่ะ" in text:
                         update_chat_history(text, "")
                         display_chat()
                         st.session_state["bot_state"] = "prepare"
@@ -794,7 +939,7 @@ if selected == "Home":
                         st.session_state['bot_state'] = "comfirmInfo"
                         update_status_display()
 
-                    if "ไม่ถูก" in text or "ไม่ใช่" in text or text == "ไม่":
+                    if "ไม่ถูก" in text or "ไม่ใช่" in text or text == "ไม่" or "ไม่ครับ" in text or "ไม่คะ" in text or "ไม่ค่ะ" in text:
                         update_chat_history(text, "")
                         display_chat()
                         chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], text)
