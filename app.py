@@ -245,9 +245,9 @@ class Chatbot:
             
             self.add_to_history(user_input, response)
             return response
-        
+
+        user_input = self.process_input(user_input)
         if ("แปลคำว่า" in text or "ช่วยแปลคำว่า" in text or "คำว่า" in text or "แปล" in text or "ช่วยแปล" in text) and ("ในภาษาอังกฤษคือ" in text or "ภาษาอังกฤษคือ" in text or "ภาษาอังกฤษ" in text or "ในภาษาอังกฤษคืออะไร" in text or "ภาษาอังกฤษคืออะไร" in text or "เป็นภาษาอังกฤษให้หน่อย" in text or "เป็นภาษาอังกฤษหน่อย" in text or "เป็นภาษาอังกฤษ" in text):
-            user_input = self.process_input(user_input)
             response, text = word_translator(user_input)
 
             if not response.endswith("ค่ะ"):
