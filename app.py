@@ -201,7 +201,9 @@ class Chatbot:
             "สองวันข้างหน้าหน้าวันอะไร" : ["2 วันข้างหน้าเป็น", "2 วันข้างหน้าวัน"],
             "ตอนนี้เวลา": ["ตอนนี้เวลา", "บอกเวลา", "เวลาเท่าไหร่", "ตอนนี้เวลากี่โมง", "เวลาเท่าไร", "เวลา", "ตอนนี้กี่โมง", "วันนี้กี่โมง"],
             "ฉันชื่ออะไร": ["{}ชื่ออะไร".format(pronoun) for pronoun in pronouns] +
-                    ["บอกชื่อ{}".format(pronoun) for pronoun in pronouns],
+                    ["บอกชื่อ{}".format(pronoun) for pronoun in pronouns] + 
+                    ["{}ชื่อว่าอะไร".format(pronoun) for pronoun in pronouns] + 
+                    ["ชื่อของ{}".format(pronoun) for pronoun in pronouns],
             "ฉันชื่อเล่นอะไร": ["{}ชื่อเล่นอะไร".format(pronoun) for pronoun in pronouns] +
                         ["บอกชื่อเล่น{}".format(pronoun) for pronoun in pronouns] +
                         ["{}ชื่อเล่นว่า".format(pronoun) for pronoun in pronouns] +
