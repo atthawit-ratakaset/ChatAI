@@ -299,17 +299,16 @@ class Chatbot:
         st.session_state['bot_state'] = "comfirmInfo"
         update_status_display()
 
-    def fix_person_data(self):
+    def update_person_data(self):
         st.session_state['last_bot_state'] = "changInfo"
         st.session_state['bot_state'] = "prepare"
         update_status_display()
-        st.session_state['fixInfo_response'] = "ขอโทษค่ะ ขอข้อมูลที่ต้องการแก้ไขใหม่ค่ะ \n กรุณาพูดข้อมูลที่ต้องการแก้ไขค่ะ? (เช่น ชื่อ, ชื่อเล่น และ วันเกิด)"
+        st.session_state['fixInfo_response'] = "ขอโทษค่ะ ขอข้อมูลที่ต้องการแก้ไขใหม่ค่ะ \n กรุณาพูดข้อมูลที่ต้องการแก้ไขค่ะ? (เช่น ชื่อ, ชื่อเล่น หรือ วันเกิด)"
         bot = update_chat_history("", st.session_state['fixInfo_response'])
         display_chat()
         time.sleep(bot)
         st.session_state['bot_state'] = "changeInfo"
         update_status_display()
-        #self.add_to_history_bot_fisrt(self.fixInfo_response, '-')
 
 chatbot = Chatbot()
 
@@ -343,7 +342,10 @@ if 'comfirmInfo_response' not in st.session_state:
 
 #default fixInfo question
 if 'fixInfo_response' not in st.session_state:
-    st.session_state['fixInfo_response'] = "ขอโทษค่ะ ขอข้อมูลที่ต้องการแก้ไขใหม่ค่ะ \n กรุณาพูดข้อมูลที่ต้องการแก้ไขค่ะ? (เช่น ชื่อ, ชื่อเล่น และ วันเกิด)"
+    st.session_state['fixInfo_response'] = "ขอโทษค่ะ ขอข้อมูลที่ต้องการแก้ไขใหม่ค่ะ \n กรุณาพูดข้อมูลที่ต้องการแก้ไขค่ะ? (เช่น ชื่อ, ชื่อเล่น หรือ วันเกิด)"
+
+if 'updateInfo_stage' not in st.session_state:
+    st.session_state['updateInfo_stage'] = None
 
 def update_status_display():
     status_text = st.session_state['bot_state']
@@ -493,10 +495,6 @@ if selected == "Home":
     if st.session_state['bot_state'] == "prepare":
         st.session_state['bot_state'] = st.session_state['last_bot_state']
         update_status_display()
-        # bot = update_chat_history("", "โปรแกรมขัดข้อง! เนื่องจากโดนขัดระวาง process! \n กลับเข้าสู่โหมดปกติ")
-        # chatbot.add_to_history_bot_fisrt("โปรแกรมขัดข้อง! เนื่องจากโดนขัดระวัง process! \n กลับเข้าสู่โหมดปกติ", '-')
-        # display_chat()
-        # time.sleep(bot)
 
     if microphone_st:
         if st.session_state["bot_state"] == "prepare":
@@ -506,7 +504,7 @@ if selected == "Home":
         elif st.session_state["bot_state"] == "active":
             st.session_state.text_received.append(microphone_st)
             text = st.session_state.text_received[-1]
-            if text:
+            if text: 
                 st.session_state['last_bot_state'] = "active"
                 st.session_state["bot_state"] = "prepare"
                 update_status_display()
@@ -568,118 +566,323 @@ if selected == "Home":
             st.session_state.text_received.append(microphone_st)
             text = st.session_state.text_received[-1]
             if text:
-                st.session_state['last_bot_state'] = "new_nickname"
-                st.session_state["bot_state"] = "prepare"
-                update_status_display()
-                update_chat_history(text, "")
-                display_chat()
-                chatbot.add_to_history_bot_fisrt("ขอโทษค่ะ ไม่ทราบว่าชื่ออะไรหรอคะ?", text)
-                chatbot.person_data['name'] = chatbot.process_input(text)
-                if "ชื่อ" in chatbot.process_input(text):
-                    name = chatbot.process_input(text).replace("ชื่อ", "")
-                    chatbot.person_data['name'] = name
-                chatbot.save_person_data()
-                bot = update_chat_history("", "ชื่อเล่นของคุณคืออะไรคะ?")
-                display_chat()
-                time.sleep(bot)
-                st.session_state["bot_state"] = "new_nickname"
-                update_status_display()
+                if st.session_state['updateInfo_stage'] == "name":
+                    st.session_state['last_bot_state'] = "comfirmInfo"
+                    st.session_state['updateInfo_stage'] = "comfirmUpdate_name"
+                    update_chat_history(text, "")
+                    display_chat()
+                    chatbot.add_to_history_bot_fisrt("ชื่อของคุณคืออะไรคะ?", text)
+                    chatbot.person_data['name'] = chatbot.process_input(text)
+                    if "ชื่อ" in chatbot.process_input(text):
+                        name = chatbot.process_input(text).replace("ชื่อ", "")
+                        chatbot.person_data['name'] = name
+                    chatbot.save_person_data()
+                    chatbot.person_data = chatbot.load_person_data()
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    bot = update_chat_history("", f"คุณชื่อว่า {chatbot.person_data['name']} ถูกต้องใช่มั้ยคะ?")
+                    display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "comfirmInfo"
+                    update_status_display()
+                else:
+                    st.session_state['last_bot_state'] = "new_nickname"
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    update_chat_history(text, "")
+                    display_chat()
+                    chatbot.add_to_history_bot_fisrt("ขอโทษค่ะ ไม่ทราบว่าชื่ออะไรหรอคะ?", text)
+                    chatbot.person_data['name'] = chatbot.process_input(text)
+                    if "ชื่อ" in chatbot.process_input(text):
+                        name = chatbot.process_input(text).replace("ชื่อ", "")
+                        chatbot.person_data['name'] = name
+                    chatbot.save_person_data()
+                    bot = update_chat_history("", "ชื่อเล่นของคุณคืออะไรคะ?")
+                    display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "new_nickname"
+                    update_status_display()
 
         elif st.session_state["bot_state"] == "new_nickname":
             st.session_state.text_received.append(microphone_st)
             text = st.session_state.text_received[-1]
             if text:
-                st.session_state['last_bot_state'] = "new_birthday"
-                st.session_state["bot_state"] = "prepare"
-                update_status_display()
-                update_chat_history(text, "")
-                display_chat()
-                chatbot.add_to_history_bot_fisrt("ชื่อเล่นของคุณคืออะไรคะ?", text)
-                chatbot.person_data['nickname'] = chatbot.process_input(text)
-                if "ชื่อ" in chatbot.process_input(text):
-                    nickname = chatbot.process_input(text).replace("ชื่อ", "")
-                    chatbot.person_data['nickname'] = nickname
-                chatbot.save_person_data()
-                bot = update_chat_history("", "วันเกิดของคุณคืออะไรคะ?")
-                display_chat()
-                time.sleep(bot)
-                st.session_state["bot_state"] = "new_birthday"
-                update_status_display()
+                if st.session_state['updateInfo_stage'] == "nickname":
+                    st.session_state['last_bot_state'] = "comfirmInfo"
+                    st.session_state['updateInfo_stage'] = "comfirmUpdate_nickname"
+                    update_chat_history(text, "")
+                    display_chat()
+                    chatbot.add_to_history_bot_fisrt("ชื่อเล่นของคุณคืออะไรคะ?", text)
+                    chatbot.person_data['nickname'] = chatbot.process_input(text)
+                    if "ชื่อ" in chatbot.process_input(text):
+                        nickname = chatbot.process_input(text).replace("ชื่อ", "")
+                        chatbot.person_data['nickname'] = nickname
+                    chatbot.save_person_data()
+                    chatbot.person_data = chatbot.load_person_data()
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    bot = update_chat_history("", f"คุณชื่อเล่นว่า{chatbot.person_data['nickname']} ถูกต้องใช่มั้ยคะ?")
+                    display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "comfirmInfo"
+                    update_status_display()
+                else:
+                    st.session_state['last_bot_state'] = "new_birthday"
+                    update_chat_history(text, "")
+                    display_chat()
+                    chatbot.add_to_history_bot_fisrt("ชื่อเล่นของคุณคืออะไรคะ?", text)
+                    chatbot.person_data['nickname'] = chatbot.process_input(text)
+                    if "ชื่อ" in chatbot.process_input(text):
+                        nickname = chatbot.process_input(text).replace("ชื่อ", "")
+                        chatbot.person_data['nickname'] = nickname
+                    chatbot.save_person_data()
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    bot = update_chat_history("", "วันเกิดของคุณคืออะไรคะ?")
+                    display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "new_birthday"
+                    update_status_display()
 
         elif st.session_state["bot_state"] == "new_birthday":
             st.session_state.text_received.append(microphone_st)
             text = st.session_state.text_received[-1]
             if text:
-                st.session_state['last_bot_state'] = "comfirmInfo"
-                st.session_state["bot_state"] = "prepare"
-                update_status_display()
-                update_chat_history(text, "")
-                display_chat()
-                chatbot.add_to_history_bot_fisrt("วันเกิดของคุณคืออะไรคะ?", text)
-                chatbot.person_data['birthday'] = chatbot.process_input(text)
-                if "วันที่" in chatbot.process_input(text):
-                    date = chatbot.process_input(text).replace("วันที่", "")
-                    chatbot.person_data['birthday'] = date
-                chatbot.save_person_data()
-
-                chatbot.person_data = chatbot.load_person_data()
-
-                chatbot.review_person_data()
-        
-        elif st.session_state["bot_state"] == "comfirmInfo":
-            st.session_state.text_received.append(microphone_st)
-            text = st.session_state.text_received[-1]
-            if text:
-                if "ขออีก" in text or "ทวน" in text or "พูดอีก" in text:
-                    update_chat_history(text, "")
-                    display_chat()
-                    chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], text)
-                    list_data = get_data()
+                if st.session_state['updateInfo_stage'] == "birthday":
                     st.session_state['last_bot_state'] = "comfirmInfo"
-                    st.session_state["bot_state"] = "prepare"
-                    update_status_display()
-                    response = f"ได้ค่ะ!\n {list_data} ข้อมูลถูกต้องมั้ยคะ?"
-                    bot = update_chat_history("", response)
-                    display_chat()
-                    time.sleep(bot)
-                    st.session_state['bot_state'] = "comfirmInfo"
-                    update_status_display()
-
-                if "ไม่ถูก" in text or "ไม่ใช่" in text or text == "ไม่":
+                    st.session_state['updateInfo_stage'] = "comfirmUpdate_birthday"
                     update_chat_history(text, "")
                     display_chat()
-                    chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], text)
-                    st.session_state["bot_state"] = "active"
-                    update_status_display()
-                    
-                elif "ใช่" in text or text == "ครับ" or text == "คะ" or text == "ค่ะ" or "ถูก" in text:
-                    st.session_state['last_bot_state'] = "active"
-                    update_chat_history(text, "")
-                    display_chat()
+                    chatbot.add_to_history_bot_fisrt("วันเกิดของคุณคืออะไรคะ?", text)
+                    chatbot.person_data['birthday'] = chatbot.process_input(text)
+                    if "วันที่" in chatbot.process_input(text):
+                        date = chatbot.process_input(text).replace("วันที่", "")
+                        chatbot.person_data['birthday'] = date
                     chatbot.save_person_data()
-                    chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], text)
+                    chatbot.person_data = chatbot.load_person_data()
                     st.session_state["bot_state"] = "prepare"
                     update_status_display()
-                    response = f"เข้าใจแล้วค่ะ! สวัสดีค่ะ {chatbot.person_data['nickname']} ยินดีที่ได้รู้จักค่ะ!"
-                    chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], "-")
-                    bot = update_chat_history("", response)
+                    bot = update_chat_history("", f"คุณเกิด {chatbot.person_data['birthday']} ถูกต้องใช่มั้ยคะ?")
                     display_chat()
                     time.sleep(bot)
-                    chatbot.check_birthday()
+                    st.session_state["bot_state"] = "comfirmInfo"
+                    update_status_display()
                 else:
                     st.session_state['last_bot_state'] = "comfirmInfo"
                     st.session_state["bot_state"] = "prepare"
                     update_status_display()
                     update_chat_history(text, "")
                     display_chat()
-                    chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], text)
+                    chatbot.add_to_history_bot_fisrt("วันเกิดของคุณคืออะไรคะ?", text)
+                    chatbot.person_data['birthday'] = chatbot.process_input(text)
+                    if "วันที่" in chatbot.process_input(text):
+                        date = chatbot.process_input(text).replace("วันที่", "")
+                        chatbot.person_data['birthday'] = date
+                    chatbot.save_person_data()
+
+                    chatbot.person_data = chatbot.load_person_data()
+
+                    chatbot.review_person_data()
+        
+        elif st.session_state["bot_state"] == "comfirmInfo":
+            st.session_state.text_received.append(microphone_st)
+            text = st.session_state.text_received[-1]
+            if text:
+                if st.session_state['updateInfo_stage'] == "comfirmUpdate_name" or st.session_state['updateInfo_stage'] == "comfirmUpdate_nickname" or st.session_state['updateInfo_stage'] == "comfirmUpdate_birthday":
+                    if "ไม่ถูก" in text or "ไม่ใช่" in text or text == "ไม่":
+                        update_chat_history(text, "")
+                        display_chat()
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        if st.session_state['updateInfo_stage'] == "comfirmUpdate_name":
+                            st.session_state['last_bot_state'] = "new_name"
+                            st.session_state['updateInfo_stage'] = "name"
+                            chatbot.add_to_history_bot_fisrt(f"คุณชื่อว่า {chatbot.person_data['name']} ถูกต้องใช่มั้ยคะ?", text)
+                            bot = update_chat_history("", "ชื่อของคุณคืออะไรคะ?")
+                            display_chat()
+                            time.sleep(bot)
+                            st.session_state['bot_state'] = "new_name"
+                            update_status_display()
+                        elif st.session_state['updateInfo_stage'] == "comfirmUpdate_nickname":
+                            st.session_state['last_bot_state'] = "new_nickname"
+                            st.session_state['updateInfo_stage'] = "nickname"
+                            chatbot.add_to_history_bot_fisrt(f"คุณชื่อเล่นว่า {chatbot.person_data['nickname']} ถูกต้องใช่มั้ยคะ?", text)
+                            bot = update_chat_history("", "ชื่อเล่นของคุณคืออะไรคะ?")
+                            display_chat()
+                            time.sleep(bot)
+                            st.session_state['bot_state'] = "new_nickname"
+                            update_status_display()
+                        elif st.session_state['updateInfo_stage'] == "comfirmUpdate_birthday":
+                            st.session_state['last_bot_state'] = "new_birthday"
+                            st.session_state['updateInfo_stage'] = "birthday"
+                            chatbot.add_to_history_bot_fisrt(f"คุณเกิด {chatbot.person_data['birthday']} ถูกต้องใช่มั้ยคะ?", text)
+                            bot = update_chat_history("", "วันเกิดของคุณคืออะไรคะ?")
+                            display_chat()
+                            time.sleep(bot)
+                            st.session_state['bot_state'] = "new_birthday"
+                            update_status_display()
+
+                    elif "ใช่" in text or text == "ครับ" or text == "คะ" or text == "ค่ะ" or "ถูก" in text:
+                        st.session_state['last_bot_state'] = "active"
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.save_person_data()
+                        if st.session_state['updateInfo_stage'] == "comfirmUpdate_name":
+                            st.session_state['updateInfo_stage'] = None
+                            chatbot.add_to_history_bot_fisrt(f"คุณชื่อว่า {chatbot.person_data['name']} ถูกต้องใช่มั้ยคะ?", text)
+                            bot = update_chat_history("", f"เข้าใจแล้วค่ะ! สวัสดีค่ะ {chatbot.person_data['name']}")
+                            chatbot.add_to_history_bot_fisrt(f"เข้าใจแล้วค่ะ! สวัสดีค่ะ {chatbot.person_data['name']}", "-")
+                            display_chat()
+                            time.sleep(bot)
+                            chatbot.check_birthday()
+                        elif st.session_state['updateInfo_stage'] == "comfirmUpdate_nickname":
+                            st.session_state['updateInfo_stage'] = None
+                            chatbot.add_to_history_bot_fisrt(f"คุณชื่อเล่นว่า {chatbot.person_data['nickname']} ถูกต้องใช่มั้ยคะ?", text)
+                            bot = update_chat_history("", f"เข้าใจแล้วค่ะ! สวัสดีค่ะ {chatbot.person_data['nickname']}")
+                            chatbot.add_to_history_bot_fisrt(f"เข้าใจแล้วค่ะ! สวัสดีค่ะ {chatbot.person_data['nickname']}", "-")
+                            display_chat()
+                            time.sleep(bot)
+                            chatbot.check_birthday()
+                        elif st.session_state['updateInfo_stage'] == "comfirmUpdate_birthday":
+                            st.session_state['updateInfo_stage'] = None
+                            chatbot.add_to_history_bot_fisrt(f"คุณเกิด {chatbot.person_data['birthday']} ถูกต้องใช่มั้ยคะ?", text)
+                            bot = update_chat_history("", f"เข้าใจแล้วค่ะ! คุณเกิด {chatbot.person_data['birthday']}")
+                            chatbot.add_to_history_bot_fisrt(f"เข้าใจแล้วค่ะ! คุณเกิด {chatbot.person_data['birthday']}", "-")
+                            display_chat()
+                            time.sleep(bot)
+                            chatbot.check_birthday()
+                    
+                    else:
+                        st.session_state['last_bot_state'] = "comfirmInfo"
+                        update_chat_history(text, "")
+                        display_chat()
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        if st.session_state['updateInfo_stage'] == "comfirmUpdate_name":
+                            st.session_state['updateInfo_stage'] = "comfirmUpdate_name"
+                            chatbot.add_to_history_bot_fisrt(f"คุณชื่อว่า {chatbot.person_data['name']} ถูกต้องใช่มั้ยคะ?", text)
+                            bot = update_chat_history("", f"คุณชื่อว่า {chatbot.person_data['name']} ถูกต้องใช่มั้ยคะ?")
+                            display_chat()
+                            time.sleep(bot)
+                        elif st.session_state['updateInfo_stage'] == "comfirmUpdate_nickname":
+                            st.session_state['updateInfo_stage'] = "comfirmUpdate_nickname"
+                            chatbot.add_to_history_bot_fisrt(f"คุณชื่อเล่นว่า {chatbot.person_data['nickname']} ถูกต้องใช่มั้ยคะ?", text)
+                            bot = update_chat_history("", f"คุณชื่อเล่นว่า {chatbot.person_data['nickname']} ถูกต้องใช่มั้ยคะ?")
+                            display_chat()
+                            time.sleep(bot)
+                        elif st.session_state['updateInfo_stage'] == "comfirmUpdate_birthday":
+                            st.session_state['updateInfo_stage'] = "comfirmUpdate_birthday"
+                            chatbot.add_to_history_bot_fisrt(f"คุณเกิด {chatbot.person_data['birthday']} ถูกต้องใช่มั้ยคะ?", text)
+                            bot = update_chat_history("", f"คุณเกิด {chatbot.person_data['birthday']} ถูกต้องใช่มั้ยคะ?")
+                            display_chat()
+                            time.sleep(bot)
+                        st.session_state['bot_state'] = "comfirmInfo"
+                        update_status_display()
+                else:
+                    if "ขออีก" in text or "ทวน" in text or "พูดอีก" in text or "พูดใหม่" in text or "ขอใหม่" in text:
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], text)
+                        list_data = get_data()
+                        st.session_state['last_bot_state'] = "comfirmInfo"
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        response = f"ได้ค่ะ!\n {list_data} ข้อมูลถูกต้องมั้ยคะ?"
+                        bot = update_chat_history("", response)
+                        display_chat()
+                        time.sleep(bot)
+                        st.session_state['bot_state'] = "comfirmInfo"
+                        update_status_display()
+
+                    if "ไม่ถูก" in text or "ไม่ใช่" in text or text == "ไม่":
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], text)
+                        chatbot.update_person_data()
+                        
+                    elif "ใช่" in text or text == "ครับ" or text == "คะ" or text == "ค่ะ" or "ถูก" in text:
+                        st.session_state['last_bot_state'] = "active"
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.save_person_data()
+                        chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], text)
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        response = f"เข้าใจแล้วค่ะ! สวัสดีค่ะ {chatbot.person_data['nickname']} ยินดีที่ได้รู้จักค่ะ!"
+                        chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], "-")
+                        bot = update_chat_history("", response)
+                        display_chat()
+                        time.sleep(bot)
+                        chatbot.check_birthday()
+                    else:
+                        st.session_state['last_bot_state'] = "comfirmInfo"
+                        update_chat_history(text, "")
+                        display_chat()
+                        chatbot.add_to_history_bot_fisrt(st.session_state['comfirmInfo_response'], text)
+                        st.session_state["bot_state"] = "prepare"
+                        update_status_display()
+                        comfirmInfo_response = "ข้อมูลถูกต้องมั้ยคะ?"
+                        bot = update_chat_history("", comfirmInfo_response)
+                        display_chat()
+                        time.sleep(bot)
+                        st.session_state['bot_state'] = "comfirmInfo"
+                        update_status_display()
+
+        elif st.session_state["bot_state"] == "changeInfo":
+            st.session_state.text_received.append(microphone_st)
+            text = st.session_state.text_received[-1]
+            if text:
+                if "ชื่อเล่น" in text:
+                    st.session_state['last_bot_state'] = "new_nickname"
+                    st.session_state['updateInfo_stage'] = "nickname"
+                    update_chat_history(text, "")
+                    display_chat()
+                    chatbot.add_to_history_bot_fisrt(st.session_state['fixInfo_response'], text)
                     st.session_state["bot_state"] = "prepare"
                     update_status_display()
-                    comfirmInfo_response = "ข้อมูลถูกต้องมั้ยคะ?"
+                    bot = update_chat_history("", "ชื่อเล่นของคุณคืออะไรคะ?")
+                    display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "new_nickname"
+                    update_status_display()
+                elif "วันเกิด" in text:
+                    st.session_state['last_bot_state'] = "new_birthday"
+                    st.session_state['updateInfo_stage'] = "birthday"
+                    update_chat_history(text, "")
+                    display_chat()
+                    chatbot.add_to_history_bot_fisrt(st.session_state['fixInfo_response'], text)
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    bot = update_chat_history("", "วันเกิดของคุณคืออะไรคะ?")
+                    display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "new_birthday"
+                    update_status_display()
+                elif "ชื่อ" in text:
+                    st.session_state['last_bot_state'] = "new_name"
+                    st.session_state['updateInfo_stage'] = "name"
+                    update_chat_history(text, "")
+                    display_chat()
+                    chatbot.add_to_history_bot_fisrt(st.session_state['fixInfo_response'], text)
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    bot = update_chat_history("", "ชื่อของคุณคืออะไรคะ?")
+                    display_chat()
+                    time.sleep(bot)
+                    st.session_state["bot_state"] = "new_name"
+                    update_status_display()
+                else:
+                    st.session_state['last_bot_state'] = "changeInfo"
+                    update_chat_history(text, "")
+                    display_chat()
+                    chatbot.add_to_history_bot_fisrt(st.session_state['fixInfo_response'], text)
+                    st.session_state["bot_state"] = "prepare"
+                    update_status_display()
+                    comfirmInfo_response = "ขอโทษค่ะ ต้องการเปลี่ยนข้อมูลตรงไหนคะ? (ชื่อ, ชื่อเล่น หรือ วันเกิด)"
                     bot = update_chat_history("", comfirmInfo_response)
                     display_chat()
                     time.sleep(bot)
-                    st.session_state['bot_state'] = "comfirmInfo"
+                    st.session_state['bot_state'] = "changeInfo"
                     update_status_display()
 
 elif selected == "Show history":
