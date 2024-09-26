@@ -32,15 +32,11 @@ def word_translator(text):
         if text.startswith(phrase):
             text = text[len(phrase):].strip()
             break
-    end_phrases = [
-        "ในภาษาอังกฤษคือ", "ภาษาอังกฤษคือ", "ในภาษาอังกฤษคืออะไร", 
-        "ภาษาอังกฤษคืออะไร", "เป็นภาษาอังกฤษให้หน่อย", "เป็นภาษาอังกฤษหน่อย", 
-        "เป็นภาษาอังกฤษ"
-    ]
+    end_phrases = ["ในภาษาอังกฤษคือ", "ภาษาอังกฤษคือ", "ภาษาอังกฤษ", "ในภาษาอังกฤษคืออะไร", 
+               "ภาษาอังกฤษคืออะไร", "เป็นภาษาอังกฤษให้หน่อย", "เป็นภาษาอังกฤษหน่อย", "เป็นภาษาอังกฤษ", "ให้หน่อยครับ"]
     for phrase in end_phrases:
-        if text.endswith(phrase) and len(text) > len(phrase):
-            text = text[:-len(phrase)].strip()
-            break
+        if phrase in text:
+            text = text.replace(phrase, "").strip()
     
     translator = Translator()
     result = translator.translate(text, src='th', dest='en')
