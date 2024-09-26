@@ -10,7 +10,7 @@ import tempfile
 import pandas as pd
 from streamlit_mic_recorder import speech_to_text
 from streamlit_option_menu import option_menu
-from ai_thinking import calculate_ai
+from ai_thinking import calculate_ai, word_translator
 
 class Chatbot:
     def __init__(self):
@@ -239,12 +239,23 @@ class Chatbot:
 
         if any(op in user_input for op in ["+", "-", "*", "/"]) and any(char.isdigit() for char in user_input):
             response = calculate_ai(user_input)
-            self.add_to_history(user_input, response)
 
             if not response.endswith("ค่ะ"):
                 response += " ค่ะ"
-                
+            
+            self.add_to_history(user_input, response)
             return response
+        
+        if ("แปล" in user_input or "คำว่า" in user_input) and ("ภาษาอังกฤษ" in user_input):
+            user_input = self.process_input(user_input)
+            response, text = word_translator(user_input)
+
+            if not response.endswith("ค่ะ"):
+                response += " ค่ะ"
+            
+            new_response = f"คำว่า '{text}' ในภาษาอังกฤษคือ {response}"
+            self.add_to_history(user_input, new_response)
+            return new_response
 
         if "สวัสดี" in user_input and ("คุณชื่ออะไร" in user_input or "เธอชื่ออะไร" in user_input):
             response = "สวัสดีค่ะ! ฉันชื่อ Chatbot ค่ะ"
