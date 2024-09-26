@@ -14,7 +14,7 @@ def calculate_ai(text):
             if isinstance(result, int) or result.is_integer():
                 response = f"คำตอบคือ {int(result)}"
             else:
-                response = f"คำตอบคือ {expression} = {result:.2f}"
+                response = f"คำตอบคือ {result:.2f}"
         else:
             response = "ไม่พบสมการในข้อความที่คุณป้อน"
         
