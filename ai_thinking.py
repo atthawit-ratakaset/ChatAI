@@ -1,4 +1,5 @@
 import re
+import contractions
 from googletrans import Translator
 
 def calculate_ai(text):
@@ -27,17 +28,29 @@ def calculate_ai(text):
         return f"ไม่สามารถตอบได้ค่ะ ขอโทษด้วยค่ะ"
 
 def word_translator(text):
-    start_phrases = ["ช่วยแปลคำว่า", "ช่วยแปลประโยค", "แปลประโยค", "แปลคำว่า", "ช่วยแปล", "แปล", "คำว่า", "ประโยค"]
+    start_phrases = [
+        "ช่วยแปลคำว่า", "ช่วยแปลประโยค", "แปลประโยค", "แปลคำว่า", 
+        "ช่วยแปล", "แปล", "คำว่า", "ประโยค"
+    ]
     for phrase in start_phrases:
         if text.startswith(phrase):
             text = text[len(phrase):].strip()
             break
-    end_phrases = ["เป็นภาษาอังกฤษให้ฟังหน่อย" ,"เป็นภาษาอังกฤษให้ฟังที", "เป็นภาษาอังกฤษให้หน่อย", "เป็นภาษาอังกฤษหน่อย", "ในภาษาอังกฤษคืออะไร", "ในภาษาอังกฤษคือ", "ในภาษาอังกฤษ", 
-               "ภาษาอังกฤษคืออะไร", "เป็นภาษาอังกฤษ", "ภาษาอังกฤษให้ฟังที", "ภาษาอังกฤษให้ฟังหน่อย", "ภาษาอังกฤษคือ", "ภาษาอังกฤษ"]
+    
+    end_phrases = [
+        "เป็นภาษาอังกฤษให้ฟังหน่อย", "เป็นภาษาอังกฤษให้ฟังที", "เป็นภาษาอังกฤษให้หน่อย", 
+        "เป็นภาษาอังกฤษหน่อย", "ในภาษาอังกฤษคืออะไร", "ในภาษาอังกฤษคือ", 
+        "ในภาษาอังกฤษ", "ภาษาอังกฤษคืออะไร", "เป็นภาษาอังกฤษ", 
+        "ภาษาอังกฤษให้ฟังที", "ภาษาอังกฤษให้ฟังหน่อย", "ภาษาอังกฤษคือ", "ภาษาอังกฤษ"
+    ]
     for phrase in end_phrases:
         if phrase in text:
             text = text.replace(phrase, "").strip()
     
     translator = Translator()
     result = translator.translate(text, src='th', dest='en')
-    return result.text, text
+    
+    translated_text = result.text
+    expanded_text = contractions.fix(translated_text)
+
+    return expanded_text, text
