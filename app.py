@@ -327,7 +327,7 @@ class Chatbot:
         update_status_display()
 
     def update_person_data(self):
-        st.session_state['last_bot_state'] = "changInfo"
+        st.session_state['last_bot_state'] = "changeInfo"
         st.session_state['bot_state'] = "prepare"
         update_status_display()
         st.session_state['fixInfo_response'] = "ขอโทษค่ะ ขอข้อมูลที่ต้องการแก้ไขใหม่ค่ะ \n กรุณาพูดข้อมูลที่ต้องการแก้ไขค่ะ? (เช่น ชื่อ, ชื่อเล่น หรือ วันเกิด)"
